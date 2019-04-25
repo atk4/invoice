@@ -1,0 +1,8 @@
+{
+  "name": "atk4/invoice",
+  "description": "Agile Toolkit Add-ons for invoice.",
+  "license": "MIT",
+  "autoload": {
+    "psr-4": {"atk4\\invoice\\":"src/"}
+  }
+}
