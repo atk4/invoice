@@ -83,18 +83,14 @@ export default {
     deleteRow: function(id){
       //find proper row index using id.
       //let rows = [...this.rowData];
-      let rows = JSON.parse(JSON.stringify(this.rowData));
+      //let rows = JSON.parse(JSON.stringify(this.rowData));
 
       const idx = this.findRowIndex(id);
       if (idx > -1) {
-        rows.splice(idx,1);
+        this.rowData.splice(idx,1);
       }
-      //this.rowData = [...rows];
-      //this.rowData = null;
-      this.rowData = JSON.parse(JSON.stringify(rows));
+      //this.rowData = JSON.parse(JSON.stringify(rows));
       this.updateLinesField();
-      // this.$nextTick(() => {
-      // });
     },
     findRowIndex: function(id){
       for(let i=0; i < this.rowData.length; i++) {
