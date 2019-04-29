@@ -28,8 +28,8 @@ export default {
     getId: function(row) {
       let id;
       row.forEach(input => {
-        if (this.rowIdField in input) {
-          id = input[this.rowIdField];
+        if ('__atkml' in input) {
+          id = input['__atkml'];
         }
       });
       return id;

@@ -38,8 +38,8 @@ export default {
   },
   created: function() {
     //this.rowData = this.getInitData();
-    this.$root.$on('update-row', (id, field, value) => {
-      this.updateRow(id, field, value);
+    this.$root.$on('update-row', (rowId, field, value) => {
+      this.updateRow(rowId, field, value);
     });
     this.$root.$on('toggle-delete', (id) => {
       const idx = this.deletables.indexOf(id);
@@ -82,14 +82,10 @@ export default {
     },
     deleteRow: function(id){
       //find proper row index using id.
-      //let rows = [...this.rowData];
-      //let rows = JSON.parse(JSON.stringify(this.rowData));
-
       const idx = this.findRowIndex(id);
       if (idx > -1) {
         this.rowData.splice(idx,1);
       }
-      //this.rowData = JSON.parse(JSON.stringify(rows));
       this.updateLinesField();
     },
     findRowIndex: function(id){
@@ -107,24 +103,18 @@ export default {
      * @param field
      * @param value
      */
-    updateRow: async function(id, field, value) {
+    updateRow: async function(rowId, field, value) {
       // find proper row index using id.
       let idx = -1;
       for(let i = 0; i < this.rowData.length; i++) {
         this.rowData[i].forEach( cell => {
-          if (cell[this.idField] === id) {
+          if (cell['__atkml'] === rowId) {
             idx = i;
             return;
           }
         })
       }
       this.updateFieldInRow(idx, field, value);
-      // update proper field using row index.
-      // this.rowData[idx].forEach(cell => {
-      //   if (field in cell) {
-      //     cell[field] = value;
-      //   }
-      // });
 
       //verify row
       let resp = await this.verifyData([...this.rowData[idx]]);
@@ -144,15 +134,12 @@ export default {
         }
       });
     },
+    /**
+     * Update Form input with all rowData values
+     * as json string.
+     */
     updateLinesField: function() {
       const field = document.getElementsByName(this.linesField)[0];
-      // let data = [];
-      // this.rowData.forEach(row => {
-      //   let cell = [];
-      //   row.forEach( (cell, idx) => {
-      //     if (this.fieldData[idx].id
-      //   });
-      // });
       field.value = JSON.stringify(this.rowData);
     },
     getInitData: function() {
@@ -164,21 +151,27 @@ export default {
       }
       return rows;
     },
+    /**
+     * Add a new row of data according
+     * to data fields values.
+     *
+     * @returns {Array}
+     */
     newDataRow: function() {
       let columns = [];
+      // add __atkml property in order to identify each row.
+      columns.push({__atkml : this.getUUID()});
       this.data.fields.forEach(item => {
-        if (item.field === this.data.idField) {
-          item.default = this.getUUID();
-        }
         columns.push({[item.field] : item.default});
       });
+
       return columns;
     },
     getId: function(row) {
       let id;
       row.forEach(input => {
-        if (this.data.idField in input) {
-          id = input[this.data.idField];
+        if ('__atkml' in input) {
+          id = input['__atkml'];
         }
       });
       return id;
