@@ -7,7 +7,8 @@ export default {
         :fluid="true" 
         class="fluid" 
         @blur="onBlur"
-        v-model="value"
+        @input="onInput"
+        :value="inputValue"
         :name="fieldName" 
         ref="cell"><slot></slot></component>
   `,
@@ -17,7 +18,7 @@ export default {
       field: this.cellData.field,
       //this field name will not get serialized and sent on form submit.
       fieldName: '-'+this.cellData.field,
-      value: this.fieldValue,
+      inputValue: this.fieldValue,
       dirtyValue: this.fieldValue,
     }
   },
@@ -37,12 +38,12 @@ export default {
       return type;
     },
     isDirty() {
-      return this.dirtyValue != this.value;
+      return this.dirtyValue != this.inputValue;
     }
   },
   methods: {
     onInput: function(value) {
-      //this.dirtyValue = value;
+      this.inputValue = value;
     },
     /**
      * Tell parent row that input value has changed.
@@ -51,8 +52,8 @@ export default {
      */
     onBlur: function(e) {
       if (this.isDirty) {
-        this.$emit('update-value', this.field, this.value);
-        this.dirtyValue = this.value;
+        this.$emit('update-value', this.field, this.inputValue);
+        this.dirtyValue = this.inputValue;
       }
     }
   }

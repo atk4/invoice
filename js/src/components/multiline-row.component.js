@@ -59,7 +59,6 @@ export default {
       return null;
     },
     getValue: function(column) {
-      //console.log('val', column.field);
       let temp = column.default;
       this.values.forEach(field => {
         if (column.field in field) {

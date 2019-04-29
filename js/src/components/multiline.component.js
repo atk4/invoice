@@ -58,8 +58,6 @@ export default {
       }
     });
   },
-  mounted: function() {
-  },
   methods: {
     /**
      * UUID v4 generator.
@@ -84,13 +82,19 @@ export default {
     },
     deleteRow: function(id){
       //find proper row index using id.
-      let rows = [...this.rowData];
+      //let rows = [...this.rowData];
+      let rows = JSON.parse(JSON.stringify(this.rowData));
+
       const idx = this.findRowIndex(id);
       if (idx > -1) {
         rows.splice(idx,1);
       }
-      this.rowData = [...rows];
+      //this.rowData = [...rows];
+      //this.rowData = null;
+      this.rowData = JSON.parse(JSON.stringify(rows));
       this.updateLinesField();
+      // this.$nextTick(() => {
+      // });
     },
     findRowIndex: function(id){
       for(let i=0; i < this.rowData.length; i++) {
@@ -201,20 +205,28 @@ export default {
   computed: {
     rowData: {
       get: function(){
-        //console.log('get', this);
         return this.rows;
       },
       set: function(rows) {
         this.rows = [...rows];
-        //return this.rows;
       }
     },
     getSpan: function(){
       return this.fieldData.length;
     },
+    /**
+     * Get id's of row set for deletion.
+     * @returns {Array}
+     */
     getDeletables: function() {
       return this.deletables;
     },
+    /**
+     * Return Delete all checkbox state base on
+     * deletables entries.
+     *
+     * @returns {string}
+     */
     getMainToggleState() {
       let state = 'off';
       if (this.deletables.length > 0) {
@@ -226,6 +238,11 @@ export default {
       }
       return state;
     },
+    /**
+     * Set delete button disabled property.
+     *
+     * @returns {boolean}
+     */
     isDeleteDisable() {
       return !this.deletables.length > 0;
     }

@@ -29,7 +29,7 @@ class MultiLine extends \atk4\ui\View
 
 
         if (!$this->multiLineTemplate) {
-            $this->multiLineTemplate = new Template('<div id="{$_id}" class="ui basic segment"><atk-multiline v-bind="initData"><div></div></atk-multiline></div>');
+            $this->multiLineTemplate = new Template('<div id="{$_id}" class="ui basic segment"><atk-multiline v-bind="initData"></atk-multiline></div>');
         }
 
         $this->multiLine = $this->add(['View', 'template' => $this->multiLineTemplate]);

@@ -4,7 +4,7 @@ export default {
   name: "atk-multiline-body",
   template: `
     <sui-table-body>
-      <atk-multiline-row v-for="(row , idx) in rows" :key="idx" :fields="fields" :rowId="getId(row)" :isDeletable="isDeletableRow(row)" :values="row"></atk-multiline-row>
+      <atk-multiline-row v-for="(row , idx) in rows" :key="getId(row)" :fields="fields" :rowId="getId(row)" :isDeletable="isDeletableRow(row)" :values="row"></atk-multiline-row>
     </sui-table-body>
   `,
   props: ['fieldDefs', 'rowData', 'rowIdField', 'deletables'],
@@ -34,18 +34,5 @@ export default {
       });
       return id;
     }
-  },
-  /**
-   * Main table body rendered.
-   *
-   * @param h
-   * @returns {*}
-   */
-  // render(h) {
-  //   let rows = [];
-  //   this.rowData.forEach((row, idx) => {
-  //     console.log('render row', this.getId(row));
-  //     rows.push(h('atk-multiline-row', {props: {inputs: this.fieldData, rowId: this.getId(row), isDeletable: this.isDeletableRow(row)}}));
-  //   });
-  //   return h('sui-table-body', {}, rows);  }
+  }
 }
