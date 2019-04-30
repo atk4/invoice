@@ -13,13 +13,18 @@ export default {
   name: 'atk-multiline-row',
   template: `
     <sui-table-row :verticalAlign="'middle'">
-        <sui-table-cell><input type="checkbox" @input="onToggleDelete" v-model="toDelete"></input></sui-table-cell>
-        <sui-table-cell v-for="(column, idx) in columns" :key="idx" :style="{overflow: 'visible'}" v-if="column.isVisible" :textAlign="getTextAlign(column)">
-         <atk-multiline-cell :fieldType="getFieldType(column)" :cellData="column" @update-value="onUpdateValue" :fieldValue="getValue(column)">{{getReadOnlyValue(column)}}</atk-multiline-cell>
+        <sui-table-cell width="one" textAlign="center"><input type="checkbox" @input="onToggleDelete" v-model="toDelete"></input></sui-table-cell>
+        <sui-table-cell :state="getErrorState(column)" v-for="(column, idx) in columns" :key="idx" :style="{overflow: 'visible'}" v-if="column.isVisible" :textAlign="getTextAlign(column)">
+         <atk-multiline-cell 
+           :fieldType="getFieldType(column)" 
+           :cellData="column" 
+           @update-value="onUpdateValue" 
+           @post-value="onPostRow"
+           :fieldValue="getValue(column)">{{getReadOnlyValue(column)}}</atk-multiline-cell>
         </sui-table-cell>
     </sui-table-row>
   `,
-  props : ['fields', 'rowId', 'isDeletable', 'values'],
+  props : ['fields', 'rowId', 'isDeletable', 'values', 'error'],
   data() {
     return { columns: this.fields}
   },
@@ -40,9 +45,19 @@ export default {
       set: function(v) {
         return v;
       }
-    },
+    }
   },
   methods: {
+    getErrorState: function(column){
+      //console.log(column);
+      if (this.error) {
+        let error = this.error.filter(e => column.field === e.field);
+        if (error.length > 0) {
+          return 'error';
+        }
+      }
+      return null;
+    },
     onEdit: function () {
       this.isEditing = true;
     },
@@ -52,6 +67,9 @@ export default {
     onUpdateValue: function (field, value) {
       this.$root.$emit('update-row', this.rowId, field, value);
     },
+    onPostRow: function() {
+      this.$root.$emit('post-row', this.rowId);
+    },
     getReadOnlyValue(column) {
       if (!column.isEditable) {
         return this.getValue(column);
@@ -59,7 +77,6 @@ export default {
       return null;
     },
     getValue: function(column) {
-      //console.log('val', column.field);
       let temp = column.default;
       this.values.forEach(field => {
         if (column.field in field) {

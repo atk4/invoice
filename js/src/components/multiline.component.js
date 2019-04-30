@@ -4,9 +4,9 @@ import multilineHeader from './multiline-header.component';
 export default {
   name: 'atk-multiline',
   template: `<div >
-                <sui-table celled size="small">
-                  <atk-multiline-header :fields="fieldData" :state="getMainToggleState"></atk-multiline-header>
-                  <atk-multiline-body :fieldDefs="fieldData" :rowData="rowData" :rowIdField="idField" :deletables="getDeletables"></atk-multiline-body>
+                <sui-table celled size="small" compact="very" fixed>
+                  <atk-multiline-header :fields="fieldData" :state="getMainToggleState" :errors="errors"></atk-multiline-header>
+                  <atk-multiline-body :fieldDefs="fieldData" :rowData="rowData" :rowIdField="idField" :deletables="getDeletables" :errors="errors"></atk-multiline-body>
                   <sui-table-footer>
                     <sui-table-row>
                         <sui-table-header-cell/>
@@ -29,7 +29,8 @@ export default {
       rows: this.getInitData(),
       fieldData: this.data.fields,
       idField: this.data.idField,
-      deletables: []
+      deletables: [],
+      errors: {}
     }
   },
   components: {
@@ -38,9 +39,14 @@ export default {
   },
   created: function() {
     //this.rowData = this.getInitData();
-    this.$root.$on('update-row', (id, field, value) => {
-      this.updateRow(id, field, value);
+    this.$root.$on('update-row', (rowId, field, value) => {
+      this.updateRow(rowId, field, value);
     });
+
+    this.$root.$on('post-row', (rowId) => {
+      this.postRow(rowId);
+    });
+
     this.$root.$on('toggle-delete', (id) => {
       const idx = this.deletables.indexOf(id);
       if (idx > -1) {
@@ -49,6 +55,7 @@ export default {
         this.deletables.push(id);
       }
     });
+
     this.$root.$on('toggle-delete-all', (isOn) => {
       this.deletables = [];
       if(isOn) {
@@ -57,8 +64,13 @@ export default {
         });
       }
     });
-  },
-  mounted: function() {
+
+    atk.vueService.eventBus.$on('atkml-row-error', (data) => {
+      if (this.$root.$el.id === data.id) {
+        this.errors = {...data.errors};
+
+      }
+    });
   },
   methods: {
     /**
@@ -84,12 +96,11 @@ export default {
     },
     deleteRow: function(id){
       //find proper row index using id.
-      let rows = [...this.rowData];
       const idx = this.findRowIndex(id);
       if (idx > -1) {
-        rows.splice(idx,1);
+        this.rowData.splice(idx,1);
+        delete this.errors[id];
       }
-      this.rowData = [...rows];
       this.updateLinesField();
     },
     findRowIndex: function(id){
@@ -101,42 +112,70 @@ export default {
       return -1;
     },
     /**
+     * Send a single row to server
+     * usually to get data expression from server.
+     *
+     * @param rowId
+     * @returns {Promise<void>}
+     */
+    postRow: async function(rowId) {
+      // find proper row index using id.
+      let idx = -1;
+      for(let i = 0; i < this.rowData.length; i++) {
+        this.rowData[i].forEach( cell => {
+          if (cell['__atkml'] === rowId) {
+            idx = i;
+            return;
+          }
+        })
+      }
+      // server will return expression field  - value if define.
+      let resp = await this.postData([...this.rowData[idx]]);
+      if (resp.expressions) {
+        let fields = Object.keys(resp.expressions);
+        fields.forEach(field => {
+          this.updateFieldInRow(idx, field, resp.expressions[field]);
+        });
+      }
+    },
+    /**
      * Update row with proper data value.
      *
      * @param id
      * @param field
      * @param value
      */
-    updateRow: async function(id, field, value) {
+    updateRow: function(rowId, field, value) {
       // find proper row index using id.
       let idx = -1;
       for(let i = 0; i < this.rowData.length; i++) {
         this.rowData[i].forEach( cell => {
-          if (cell[this.idField] === id) {
+          if (cell['__atkml'] === rowId) {
             idx = i;
             return;
           }
         })
       }
       this.updateFieldInRow(idx, field, value);
-      // update proper field using row index.
-      // this.rowData[idx].forEach(cell => {
-      //   if (field in cell) {
-      //     cell[field] = value;
-      //   }
-      // });
-
-      //verify row
-      let resp = await this.verifyData([...this.rowData[idx]]);
-      if (resp.expressions) {
-        //console.log(resp.expressions);
-        let fields = Object.keys(resp.expressions);
-        fields.forEach(field => {
-          this.updateFieldInRow(idx, field, resp.expressions[field]);
-        });
-      }
+      this.clearError(rowId, field);
       this.updateLinesField();
     },
+    clearError: function(rowId, field) {
+      if (rowId in this.errors) {
+        let errors = this.errors[rowId].filter( error => error.field != field);
+        this.errors[rowId] = [...errors];
+        if (errors.length === 0) {
+          delete this.errors[rowId];
+        }
+      }
+    },
+    /**
+     * Update the value of the field in rowData.
+     *
+     * @param idx
+     * @param field
+     * @param value
+     */
     updateFieldInRow(idx, field, value) {
       this.rowData[idx].forEach(cell => {
         if (field in cell) {
@@ -144,17 +183,19 @@ export default {
         }
       });
     },
+    /**
+     * Update Multi-line Form input with all rowData values
+     * as json string.
+     */
     updateLinesField: function() {
       const field = document.getElementsByName(this.linesField)[0];
-      // let data = [];
-      // this.rowData.forEach(row => {
-      //   let cell = [];
-      //   row.forEach( (cell, idx) => {
-      //     if (this.fieldData[idx].id
-      //   });
-      // });
       field.value = JSON.stringify(this.rowData);
     },
+    /**
+     * Get initial rowData value.
+     *
+     * @returns {Array}
+     */
     getInitData: function() {
       let rows = [], value = '';
       // check if input containing data is set and initialized.
@@ -164,26 +205,38 @@ export default {
       }
       return rows;
     },
+    /**
+     * Add a new row of data and
+     * set values to default if available.
+     *
+     * @returns {Array}
+     */
     newDataRow: function() {
       let columns = [];
+      // add __atkml property in order to identify each row.
+      columns.push({__atkml : this.getUUID()});
       this.data.fields.forEach(item => {
-        if (item.field === this.data.idField) {
-          item.default = this.getUUID();
-        }
         columns.push({[item.field] : item.default});
       });
+
       return columns;
     },
+    /**
+     * Return the __atkml id of the row.
+     *
+     * @param row
+     * @returns {*}
+     */
     getId: function(row) {
       let id;
       row.forEach(input => {
-        if (this.data.idField in input) {
-          id = input[this.data.idField];
+        if ('__atkml' in input) {
+          id = input['__atkml'];
         }
       });
       return id;
     },
-    verifyData: async function(row) {
+    postData: async function(row) {
       let data = {};
       let fields = this.fieldData.map( field => field.field);
       fields.forEach( field => {
@@ -201,20 +254,28 @@ export default {
   computed: {
     rowData: {
       get: function(){
-        //console.log('get', this);
         return this.rows;
       },
       set: function(rows) {
         this.rows = [...rows];
-        //return this.rows;
       }
     },
     getSpan: function(){
-      return this.fieldData.length;
+      return this.fieldData.length - 1;
     },
+    /**
+     * Get id's of row set for deletion.
+     * @returns {Array}
+     */
     getDeletables: function() {
       return this.deletables;
     },
+    /**
+     * Return Delete all checkbox state base on
+     * deletables entries.
+     *
+     * @returns {string}
+     */
     getMainToggleState() {
       let state = 'off';
       if (this.deletables.length > 0) {
@@ -226,6 +287,11 @@ export default {
       }
       return state;
     },
+    /**
+     * Set delete button disabled property.
+     *
+     * @returns {boolean}
+     */
     isDeleteDisable() {
       return !this.deletables.length > 0;
     }
