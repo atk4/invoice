@@ -44,6 +44,7 @@ export default {
   methods: {
     onInput: function(value) {
       this.inputValue = value;
+      this.$emit('update-value', this.field, this.inputValue);
     },
     /**
      * Tell parent row that input value has changed.
@@ -52,7 +53,7 @@ export default {
      */
     onBlur: function(e) {
       if (this.isDirty) {
-        this.$emit('update-value', this.field, this.inputValue);
+        this.$emit('post-value');
         this.dirtyValue = this.inputValue;
       }
     }

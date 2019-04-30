@@ -9,15 +9,20 @@ use atk4\data\Field_SQL_Expression;
 use atk4\data\Model;
 use atk4\data\ValidationException;
 use atk4\dsql\Expression;
+use atk4\ui\Exception;
+use atk4\ui\FormField\Generic;
+use atk4\ui\jsVueService;
 use atk4\ui\Template;
 
-class MultiLine extends \atk4\ui\View
+class MultiLine extends Generic
 {
+    public $layoutWrap = false;
     public $multiLineTemplate = null;
     public $multiLine = null;
     public $linesFieldName = 'lines_field';
     public $fieldDefs = null;
     public $cb = null;
+    public $rowErrors = null;
 
     public function init()
     {
@@ -29,12 +34,157 @@ class MultiLine extends \atk4\ui\View
 
 
         if (!$this->multiLineTemplate) {
-            $this->multiLineTemplate = new Template('<div id="{$_id}" class="ui basic segment"><atk-multiline v-bind="initData"></atk-multiline></div>');
+            $this->multiLineTemplate = new Template('<div id="{$_id}" class="ui basic segment"><atk-multiline v-bind="initData"></atk-multiline>{$Input}</div>');
         }
 
         $this->multiLine = $this->add(['View', 'template' => $this->multiLineTemplate]);
 
         $this->cb = $this->add('jsCallback');
+
+        $this->form->addHook('loadPOST', function($form){
+            $rows = json_decode($_POST[$this->short_name], true);
+            if ($rows) {
+                $this->rowErrors = $this->validateRows($rows);
+                if ($this->rowErrors) {
+                    throw new ValidationException([$this->short_name => 'multine error']);
+                }
+            }
+        });
+
+        // Add special form error handling.
+        $this->form->addHook('displayError', function($form, $fieldName, $str) {
+            if ($fieldName === $this->short_name) {
+                $jsError = [(new jsVueService())->emitEvent('atkml-row-error', ['id' => $this->multiLine->name, 'errors' => $this->rowErrors])];
+            } else {
+                $jsError = [$form->js()->form('add prompt', $fieldName, $str)];
+            }
+            return $jsError;
+        });
+    }
+
+    /**
+     * Input field collecting multiple rows of data.
+     *
+     * @return string
+     */
+    public function getInput()
+    {
+        return $this->app->getTag('input', [
+            'name'        => $this->short_name,
+            'type'        => 'hidden',
+            'value'       => $this->getValue(),
+            'readonly'    => true,
+        ]);
+    }
+
+
+    public function getValue()
+    {
+        return null;
+    }
+
+
+    /**
+     * Validate each row and return errors if found.
+     *
+     * @param $rows
+     *
+     * @return array|null
+     */
+    public function validateRows($rows)
+    {
+        $rowErrors = [];
+
+        foreach ($rows as $kr => $row) {
+            $rowId = $this->getMlRowId($row);
+            foreach ($row as $kc => $col) {
+                foreach ($col as $fieldName => $value) {
+                    if ($fieldName === '__atkml' ||  $fieldName === $this->model->id_field ) {
+                        continue;
+                    }
+                    try {
+                        $field = $this->model->getElement($fieldName);
+                        // save field value only if field was editable in form at all
+                        if (!$field->read_only) {
+                            $this->model[$fieldName] = $this->app->ui_persistence->typecastLoadField($field, $value);
+                        }
+
+                    } catch (\atk4\core\Exception $e) {
+                        $rowErrors[$rowId][] = ['field' => $fieldName, 'msg' => $e->getMessage()];
+                    }
+                }
+            }
+            $rowErrors = $this->addModelValidateErrors($rowErrors, $rowId);
+        }
+
+        if ($rowErrors) {
+            return $rowErrors;
+        }
+
+        return null;
+    }
+
+    public function saveRows($rows, $parentModel = null, $ref = null)
+    {
+        $rows = json_decode($rows, true);
+
+        if ($parentModel && !$parentModel->loaded()) {
+            throw new Exception('Parent model need to be loaded');
+        }
+
+        // try load related data
+        if ($ref) {
+            $ids = [];
+            foreach ($parentModel->ref($ref) as $id => $data) {
+                $ids[] = $id;
+            }
+        }
+
+        foreach ($rows as $kr => $row) {
+            $rowId = $this->getMlRowId($row);
+            foreach ($row as $kc => $col) {
+                foreach ($col as $fieldName => $value) {
+                    if ($fieldName === '__atkml') {
+                        continue;
+                    }
+                    $field = $this->model->getElement($fieldName);
+
+                    if (!$field instanceof Field_SQL_Expression) {
+                        $field->set($value);
+                    }
+
+                }
+            }
+            $this->model->save();
+        }
+
+
+    }
+
+    private function addModelValidateErrors($errors, $rowId)
+    {
+        //$errors = [];
+        $e = $this->model->validate();
+        if ($e) {
+            foreach ($e as $f => $msg) {
+                $errors[$rowId][] = ['field' => $f, 'msg' => $msg];
+            }
+        }
+        return $errors;
+    }
+
+    private function getMlRowId($row)
+    {
+        $rowId = null;
+        foreach ($row as $k => $col) {
+            foreach ($col as $fieldName => $value) {
+                if ($fieldName === '__atkml') {
+                    $rowId = $value;
+                }
+            }
+            if ($rowId) break;
+        }
+        return $rowId;
     }
 
     public function setModel($m, $fields = null)
@@ -101,12 +251,14 @@ class MultiLine extends \atk4\ui\View
 
     public function renderView()
     {
+        if (!$this->model) {
+            throw new Exception('Multiline field needs to have it\'s model setup.');
+        }
+
         if ($this->cb->triggered()){
             $this->cb->set(function() {
                 try {
                     $this->renderCallback();
-                } catch (ValidationException $e) {
-                    $this->app->terminate(json_encode(['success' => false, 'error' => 'field validation', 'fields' => $e->errors ]));
                 } catch (\atk4\Core\Exception $e) {
                     $this->app->terminate(json_encode(['success' => false, 'error' => $e->getMessage()]));
                 } catch (\Error $e) {
@@ -115,12 +267,13 @@ class MultiLine extends \atk4\ui\View
             });
         }
 
+        $this->multiLine->template->setHTML('Input', $this->getInput());
         parent::renderView();
 
         $this->multiLine->vue('atk-multiline',
                               [
                                   'data' => [
-                                      'linesField'  => $this->linesFieldName,
+                                      'linesField'  => $this->short_name,
                                       'fields'      => $this->fieldDefs,
                                       'idField'     => $this->model->id_field,
                                       'url'         => $this->cb->getJSURL()
@@ -144,7 +297,7 @@ class MultiLine extends \atk4\ui\View
             'message' => 'Success',
         ];
 
-        $this->loadPOST();
+        $this->getRowData();
         $dummyValues = $this->getExpressionValues($this->model);
 
 
@@ -152,35 +305,24 @@ class MultiLine extends \atk4\ui\View
     }
 
     /**
-     * Looks inside the POST of the request and loads it into the current model.
+     * Looks inside the POST of the request and loads data into the current model.
+     * Allow to Run expression base on rowData value.
      */
-    private function loadPOST()
+    private function getRowData()
     {
         $post = $_POST;
 
-        $errors = [];
-
         foreach ($this->fieldDefs as $def) {
             $fieldName = $def['field'];
-            try {
-                if ($fieldName === $this->model->id_field) {
-                    continue;
-                }
-                $field = $this->model->getElement($fieldName);
-                $value = isset($post[$fieldName]) ? $post[$fieldName] : null;
-
-                // save field value only if field was editable in form at all
-                if (!$field->read_only) {
-                    $this->model[$fieldName] = $this->app->ui_persistence->typecastLoadField($field, $value);
-                }
-
-            } catch (\atk4\core\Exception $e) {
-                $errors[$fieldName] = $e->getMessage();
+            if ($fieldName === $this->model->id_field) {
+                continue;
             }
-        }
-
-        if ($errors) {
-            throw new \atk4\data\ValidationException($errors);
+            $value = isset($post[$fieldName]) ? $post[$fieldName] : null;
+            try {
+                $this->model[$fieldName] = $value;
+            } catch (ValidationException $e) {
+                //bypass validation at this point.
+            }
         }
     }
 
