@@ -8,7 +8,6 @@ namespace atk4\invoice\FormField;
 use atk4\data\Field_SQL_Expression;
 use atk4\data\Model;
 use atk4\data\ValidationException;
-use atk4\dsql\Expression;
 use atk4\ui\Exception;
 use atk4\ui\FormField\Generic;
 use atk4\ui\jsVueService;
@@ -22,7 +21,12 @@ class MultiLine extends Generic
     public $linesFieldName = 'lines_field';
     public $fieldDefs = null;
     public $cb = null;
+    public $changeCb = null;
     public $rowErrors = null;
+    public $modelRef = null;
+    public $linkField = null;
+    public $rowFields = null;
+    public $rowData = null;
 
     public function init()
     {
@@ -41,17 +45,18 @@ class MultiLine extends Generic
 
         $this->cb = $this->add('jsCallback');
 
+        //load data associate with this input and validate it.
         $this->form->addHook('loadPOST', function($form){
-            $rows = json_decode($_POST[$this->short_name], true);
-            if ($rows) {
-                $this->rowErrors = $this->validateRows($rows);
+            $this->rowData = json_decode($_POST[$this->short_name], true);
+            if ($this->rowData) {
+                $this->rowErrors = $this->validate($this->rowData);
                 if ($this->rowErrors) {
                     throw new ValidationException([$this->short_name => 'multine error']);
                 }
             }
         });
 
-        // Add special form error handling.
+        // Change form error handling.
         $this->form->addHook('displayError', function($form, $fieldName, $str) {
             if ($fieldName === $this->short_name) {
                 $jsError = [(new jsVueService())->emitEvent('atkml-row-error', ['id' => $this->multiLine->name, 'errors' => $this->rowErrors])];
@@ -60,6 +65,16 @@ class MultiLine extends Generic
             }
             return $jsError;
         });
+    }
+
+    /**
+     * Add a callback when field are changed.
+     *
+     * @param array|\atk4\ui\FormField\jsExpression|callable|string $fx
+     */
+    public function onChange($fx)
+    {
+        $this->changeCb = $fx;
     }
 
     /**
@@ -77,12 +92,40 @@ class MultiLine extends Generic
         ]);
     }
 
-
+    /**
+     * Get multiline initial field value.
+     *
+     * @return false|string
+     * @throws \atk4\core\Exception
+     */
     public function getValue()
     {
-        return null;
-    }
+        $m = null;
+        $data = [];
 
+        if ($this->model->loaded() && $this->modelRef) {
+            $m = $this->model->ref($this->modelRef);
+        } else if (!$this->modelRef) {
+            $m = $this->model;
+        }
+        if ($m) {
+            foreach ($m as $id => $row) {
+                $d_row = [];
+                foreach ($this->rowFields as $fieldName) {
+                    $field = $m->getElement($fieldName);
+                    if ($field->isEditable()) {
+                        $value = $row->get($field);
+                    } else {
+                        $value = $this->app->ui_persistence->_typecastSaveField($field, $row->get($field));
+                    }
+                    $d_row[$fieldName] = $value;
+                }
+                $data[] = $d_row;
+            }
+        }
+
+        return json_encode($data, JSON_UNESCAPED_UNICODE);
+    }
 
     /**
      * Validate each row and return errors if found.
@@ -90,31 +133,33 @@ class MultiLine extends Generic
      * @param $rows
      *
      * @return array|null
+     * @throws \atk4\core\Exception
      */
-    public function validateRows($rows)
+    public function validate($rows)
     {
         $rowErrors = [];
+        $m = $this->getModel();
 
-        foreach ($rows as $kr => $row) {
-            $rowId = $this->getMlRowId($row);
-            foreach ($row as $kc => $col) {
-                foreach ($col as $fieldName => $value) {
-                    if ($fieldName === '__atkml' ||  $fieldName === $this->model->id_field ) {
-                        continue;
+        foreach ($rows as $row => $cols) {
+            $rowId = $this->getMlRowId($cols);
+            foreach ($cols as $col) {
+                $fieldName = key($col);
+                if ($fieldName === '__atkml' ||  $fieldName === $m->id_field ) {
+                    continue;
+                }
+                $value = $col[$fieldName];
+                try {
+                    $field = $m->getElement($fieldName);
+                    // save field value only if field was editable in form at all
+                    if (!$field->read_only) {
+                        $m[$fieldName] = $this->app->ui_persistence->typecastLoadField($field, $value);
                     }
-                    try {
-                        $field = $this->model->getElement($fieldName);
-                        // save field value only if field was editable in form at all
-                        if (!$field->read_only) {
-                            $this->model[$fieldName] = $this->app->ui_persistence->typecastLoadField($field, $value);
-                        }
 
-                    } catch (\atk4\core\Exception $e) {
-                        $rowErrors[$rowId][] = ['field' => $fieldName, 'msg' => $e->getMessage()];
-                    }
+                } catch (\atk4\core\Exception $e) {
+                    $rowErrors[$rowId][] = ['field' => $fieldName, 'msg' => $e->getMessage()];
                 }
             }
-            $rowErrors = $this->addModelValidateErrors($rowErrors, $rowId);
+            $rowErrors = $this->addModelValidateErrors($rowErrors, $rowId, $m);
         }
 
         if ($rowErrors) {
@@ -124,55 +169,93 @@ class MultiLine extends Generic
         return null;
     }
 
-    public function saveRows($rows, $parentModel = null, $ref = null)
+    /**
+     * Save rows.
+     *
+     * @throws Exception
+     * @throws \atk4\core\Exception
+     * @throws \atk4\data\Exception
+     */
+    public function saveRows()
     {
-        $rows = json_decode($rows, true);
-
-        if ($parentModel && !$parentModel->loaded()) {
+        // if we are using a reference, make sure main model is loaded.
+        if ($this->modelRef && !$this->model->loaded()) {
             throw new Exception('Parent model need to be loaded');
         }
 
-        // try load related data
-        if ($ref) {
-            $ids = [];
-            foreach ($parentModel->ref($ref) as $id => $data) {
-                $ids[] = $id;
-            }
+        $model = $this->model;
+        if ($this->modelRef) {
+            $model = $model->ref($this->modelRef);
         }
 
-        foreach ($rows as $kr => $row) {
-            $rowId = $this->getMlRowId($row);
-            foreach ($row as $kc => $col) {
-                foreach ($col as $fieldName => $value) {
-                    if ($fieldName === '__atkml') {
-                        continue;
-                    }
-                    $field = $this->model->getElement($fieldName);
+        $currentIds = [];
+        foreach ($this->getModel() as $id => $data) {
+            $currentIds[] = $id;
+        }
 
-                    if (!$field instanceof Field_SQL_Expression) {
-                        $field->set($value);
-                    }
+        foreach ($this->rowData as $row => $cols) {
+            $rowId = $this->getMlRowId($cols);
+            if($this->modelRef && $this->linkField) {
+                $model[$this->linkField] = $this->model->get('id');
+            }
+            foreach ($cols as $col) {
+                $fieldName = key($col);
+                if ($fieldName === '__atkml') {
+                    continue;
+                }
+                $value = $col[$fieldName];
+                if ($fieldName === $model->id_field && $value) {
+                    $model->load($value);
+                }
 
+                $field = $model->getElement($fieldName);
+
+                if (!$field instanceof Field_SQL_Expression) {
+                    $field->set($value);
                 }
             }
-            $this->model->save();
+            $id = $model->save()->get($model->id_field);//->unload();
+            $k = array_search($id, $currentIds);
+            if ( $k > -1) {
+                unset($currentIds[$k]);
+            }
+
+            $model->unload();
         }
-
-
+        // if currentId are still there, then delete them.
+        forEach ($currentIds as $id) {
+            $model->delete($id);
+        }
     }
 
-    private function addModelValidateErrors($errors, $rowId)
+    /**
+     * Check for model validate error.
+     *
+     * @param $errors
+     * @param $rowId
+     * @param $model
+     *
+     * @return mixed
+     */
+    private function addModelValidateErrors($errors, $rowId, $model)
     {
-        //$errors = [];
-        $e = $this->model->validate();
+        $e = $model->validate();
         if ($e) {
             foreach ($e as $f => $msg) {
                 $errors[$rowId][] = ['field' => $f, 'msg' => $msg];
             }
         }
+
         return $errors;
     }
 
+    /**
+     * Return MultiLine row id in a row of data.
+     *
+     * @param $row
+     *
+     * @return |null
+     */
     private function getMlRowId($row)
     {
         $rowId = null;
@@ -187,17 +270,60 @@ class MultiLine extends Generic
         return $rowId;
     }
 
-    public function setModel($m, $fields = null)
+    /**
+     * Will return a model reference if reference was set
+     * in setModel, Otherwise, will return main model.
+     *
+     * @return Model
+     * @throws \atk4\core\Exception
+     */
+    public function getModel()
     {
+        $m = $this->model;
+        if ($this->modelRef) {
+            $m = $m->ref($this->modelRef);
+        }
 
-        $m = parent::setModel($m);
+        return $m;
+    }
+
+    /**
+     * Set view model using main parent model.
+     * When model reference is needed, use $this->getModel()
+     *
+     * @param Model $m
+     * @param array $fields
+     * @param null $modelRef
+     * @param null $linkField
+     *
+     * @return Model
+     * @throws Exception
+     * @throws \atk4\core\Exception
+     */
+    public function setModel($model, $fields = [], $modelRef = null, $linkField = null)
+    {
+        //remove our self from model
+        if ($model->hasElement($this->short_name)){
+            $model->getElement($this->short_name)->never_persist = true;
+        }
+        $m = parent::setModel($model);
+
+        if ($modelRef) {
+            if (!$linkField) {
+                throw new Exception('Using model ref required to set $linkField');
+            }
+            $this->linkField = $linkField;
+            $this->modelRef = $modelRef;
+            $m = $m->ref($modelRef);
+        }
+
         if (!$fields) {
             $fields = $this->getModelFields($m);
         }
-        $fields = array_merge([$m->id_field], $fields);
+        $this->rowFields = array_merge([$m->id_field], $fields);
 
 
-        foreach ($fields as $fieldName) {
+        foreach ($this->rowFields as $fieldName) {
             $field = $m->getElement($fieldName);
 
             if (!$field instanceof \atk4\data\Field) {
@@ -251,14 +377,14 @@ class MultiLine extends Generic
 
     public function renderView()
     {
-        if (!$this->model) {
+        if (!$this->getModel()) {
             throw new Exception('Multiline field needs to have it\'s model setup.');
         }
 
         if ($this->cb->triggered()){
             $this->cb->set(function() {
                 try {
-                    $this->renderCallback();
+                    return $this->renderCallback();
                 } catch (\atk4\Core\Exception $e) {
                     $this->app->terminate(json_encode(['success' => false, 'error' => $e->getMessage()]));
                 } catch (\Error $e) {
@@ -275,7 +401,7 @@ class MultiLine extends Generic
                                   'data' => [
                                       'linesField'  => $this->short_name,
                                       'fields'      => $this->fieldDefs,
-                                      'idField'     => $this->model->id_field,
+                                      'idField'     => $this->getModel()->id_field,
                                       'url'         => $this->cb->getJSURL()
                                   ]
                               ],
@@ -292,38 +418,46 @@ class MultiLine extends Generic
      */
     private function renderCallback()
     {
+        $action = isset($_POST['action']) ? $_POST['action'] : null;
         $response = [
             'success' => true,
             'message' => 'Success',
+            'changeCb' => $this->changeCb ? true : false
         ];
 
-        $this->getRowData();
-        $dummyValues = $this->getExpressionValues($this->model);
-
-
-        $this->app->terminate(json_encode(array_merge($response, ['expressions' => $dummyValues])));
+        switch ($action) {
+            case 'update-row':
+                $m = $this->getRowDataModel($this->getModel());
+                $dummyValues = $this->getExpressionValues($m);
+                $this->app->terminate(json_encode(array_merge($response, ['expressions' => $dummyValues])));
+                break;
+            case 'on-change':
+                return call_user_func($this->changeCb, json_decode($_POST['rows'], true));
+                break;
+        }
     }
 
     /**
-     * Looks inside the POST of the request and loads data into the current model.
+     * Looks inside the POST of the request and loads data into model.
      * Allow to Run expression base on rowData value.
      */
-    private function getRowData()
+    private function getRowDataModel($model)
     {
         $post = $_POST;
 
         foreach ($this->fieldDefs as $def) {
             $fieldName = $def['field'];
-            if ($fieldName === $this->model->id_field) {
+            if ($fieldName === $model->id_field) {
                 continue;
             }
             $value = isset($post[$fieldName]) ? $post[$fieldName] : null;
             try {
-                $this->model[$fieldName] = $value;
+                $model[$fieldName] = $value;
             } catch (ValidationException $e) {
                 //bypass validation at this point.
             }
         }
+        return $model;
     }
 
     /**
@@ -340,7 +474,7 @@ class MultiLine extends Generic
         $dummyFields = [];
         foreach ($this->getExpressionFields($m) as $k => $field) {
             $dummyFields[$k]['name'] = $field->short_name;
-            $dummyFields[$k]['expr'] = $this->getDummyExpression($field);
+            $dummyFields[$k]['expr'] = $this->getDummyExpression($field, $m);
         }
 
         $dummyModel = new Model($m->persistence, ['table' => $m->table]);
@@ -365,10 +499,10 @@ class MultiLine extends Generic
      *
      * @return array
      */
-    private function getExpressionFields($m)
+    private function getExpressionFields($model)
     {
         $fields = [];
-        foreach ($m->elements as $f) {
+        foreach ($model->elements as $f) {
             if (!$f instanceof Field_SQL_Expression) {
                 continue;
             }
@@ -389,7 +523,7 @@ class MultiLine extends Generic
      * @return mixed
      * @throws \atk4\core\Exception
      */
-    private function getDummyExpression($exprField)
+    private function getDummyExpression($exprField, $model)
     {
         $expr = $exprField->expr;
         $matches = [];
@@ -398,11 +532,11 @@ class MultiLine extends Generic
 
         foreach ($matches[0] as $match) {
             $fieldName = substr($match, 1, -1);
-            $field = $this->model->getElement($fieldName);
+            $field = $model->getElement($fieldName);
             if ($field instanceof Field_SQL_Expression) {
-                $expr = str_replace($match, $this->getDummyExpression($field), $expr);
+                $expr = str_replace($match, $this->getDummyExpression($field, $model), $expr);
             } else {
-                $expr = str_replace($match, $this->getValueForExpression($exprField, $fieldName), $expr);
+                $expr = str_replace($match, $this->getValueForExpression($exprField, $fieldName, $model), $expr);
             }
         }
 
@@ -419,18 +553,18 @@ class MultiLine extends Generic
      *
      * @return int|mixed|string
      */
-    private function getValueForExpression($exprField, $fieldName)
+    private function getValueForExpression($exprField, $fieldName, $model)
     {
         switch($exprField->type) {
             // will return 0 or the field value.
             case 'money':
             case 'integer':
             case 'number':
-                $value = $this->model[$fieldName] ? $this->model[$fieldName] : 0;
+                $value = $model[$fieldName] ? $model[$fieldName] : 0;
                 break;
             // will return "" or field value enclosed in bracket: "value"
             default:
-                $value = $this->model[$fieldName] ? '"'.$this->model[$fieldName].'"' : '""';
+                $value = $model[$fieldName] ? '"'.$model[$fieldName].'"' : '""';
         }
 
         return $value;

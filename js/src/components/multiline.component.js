@@ -26,7 +26,7 @@ export default {
   data() {
     return {
       linesField: this.data.linesField, //form field where to set multiline content value.
-      rows: this.getInitData(),
+      rows: [],
       fieldData: this.data.fields,
       idField: this.data.idField,
       deletables: [],
@@ -38,7 +38,11 @@ export default {
     'atk-multiline-header' : multilineHeader
   },
   created: function() {
-    //this.rowData = this.getInitData();
+    this.rowData = this.getInitData();
+    this.$nextTick(() => {
+      this.updateLinesField();
+    });
+
     this.$root.$on('update-row', (rowId, field, value) => {
       this.updateRow(rowId, field, value);
     });
@@ -62,6 +66,12 @@ export default {
         this.rowData.forEach( row => {
           this.deletables.push(this.getId(row));
         });
+      }
+    });
+
+    atk.vueService.eventBus.$on('atkml-get-data', (data) => {
+      if (this.$root.$el.id === data.id) {
+
       }
     });
 
@@ -131,11 +141,15 @@ export default {
       }
       // server will return expression field  - value if define.
       let resp = await this.postData([...this.rowData[idx]]);
+      console.log(resp);
       if (resp.expressions) {
         let fields = Object.keys(resp.expressions);
         fields.forEach(field => {
           this.updateFieldInRow(idx, field, resp.expressions[field]);
         });
+      }
+      if (resp.changeCb) {
+        this.postRaw();
       }
     },
     /**
@@ -201,7 +215,14 @@ export default {
       // check if input containing data is set and initialized.
       let field = document.getElementsByName(this.linesField)[0];
       if (field) {
-        value = field.value;
+        //Map value to our rowData.
+        rows = JSON.parse(field.value).map(fields => {
+          let data = Object.keys(fields).map(field => {
+            return {[field]:fields[field]};
+          });
+          data.push({__atkml:this.getUUID()});
+          return data;
+        });
       }
       return rows;
     },
@@ -236,6 +257,14 @@ export default {
       });
       return id;
     },
+    postRaw: function() {
+      $('#'+this.$root.$el.id).api({
+        on: 'now',
+        url: this.data.url,
+        method: 'post',
+        data: {action: 'on-change', rows: JSON.stringify(this.rowData)}
+      });
+    },
     postData: async function(row) {
       let data = {};
       let fields = this.fieldData.map( field => field.field);
@@ -243,6 +272,7 @@ export default {
         data[field] = row.filter(item => field in item)[0][field];
       });
       //console.log(data);
+      data.action = 'update-row';
       try {
         let response = await atk.apiService.suiFetch(this.data.url, {data: data, method: 'post'});
         return response;

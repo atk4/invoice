@@ -8,8 +8,8 @@ export default {
         class="fluid" 
         @blur="onBlur"
         @input="onInput"
-        :value="inputValue"
-        :name="fieldName" 
+        v-model="inputValue"
+        :name="fieldName"
         ref="cell"><slot></slot></component>
   `,
   props: ['cellData', 'fieldType', 'fieldValue'],

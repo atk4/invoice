@@ -99,6 +99,9 @@ export default {
       if (!column.isEditable){
         type = 'div';
       }
+      if (column.type === 'boolean') {
+        type = 'sui-checkbox'
+      }
       return type;
     },
     getTextAlign(column) {
