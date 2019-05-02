@@ -130,11 +130,14 @@ class MultiLine extends Generic
 
         // Change form error handling.
         $this->form->addHook('displayError', function($form, $fieldName, $str) {
+            // When error are coming from this multiline field then advice multiline component about these errors.
+            // otherwise use normal field error.
             if ($fieldName === $this->short_name) {
                 $jsError = [(new jsVueService())->emitEvent('atkml-row-error', ['id' => $this->multiLine->name, 'errors' => $this->rowErrors])];
             } else {
                 $jsError = [$form->js()->form('add prompt', $fieldName, $str)];
             }
+
             return $jsError;
         });
     }
@@ -180,6 +183,9 @@ class MultiLine extends Generic
 
     /**
      * Get multiline initial field value.
+     * Value is based on model set and will
+     * output data rows as json string value.
+     *
      *
      * @return false|string
      * @throws \atk4\core\Exception
@@ -189,6 +195,7 @@ class MultiLine extends Generic
         $m = null;
         $data = [];
 
+        //set model according to model reference if set or simply the model pass to it.
         if ($this->model->loaded() && $this->modelRef) {
             $m = $this->model->ref($this->modelRef);
         } else if (!$this->modelRef) {
@@ -374,8 +381,9 @@ class MultiLine extends Generic
     }
 
     /**
-     * Set view model using main parent model.
-     * When model reference is needed, use $this->getModel()
+     * Set view model.
+     * If modelRef is used then getModel will return proper model.
+     *
      *
      * @param Model $m
      * @param array $fields
@@ -583,6 +591,7 @@ class MultiLine extends Generic
 
     /**
      * Get all field expression in model.
+     * But only evaluate expression used in rowFields.
      *
      * @return array
      */
@@ -590,7 +599,7 @@ class MultiLine extends Generic
     {
         $fields = [];
         foreach ($model->elements as $f) {
-            if (!$f instanceof Field_SQL_Expression) {
+            if (!$f instanceof Field_SQL_Expression || !in_array($f->short_name, $this->rowFields)) {
                 continue;
             }
 
@@ -633,7 +642,6 @@ class MultiLine extends Generic
     /**
      * Return a value according to field use in expression and the expression type.
      * If field use in expression is null , the default value is return.
-     *
      *
      * @param $exprField
      * @param $fieldName

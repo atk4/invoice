@@ -16,6 +16,7 @@ export default {
   data() {
     return {
       field: this.cellData.field,
+      type: this.cellData.type,
       //this field name will not get serialized and sent on form submit.
       fieldName: '-'+this.cellData.field,
       inputValue: this.fieldValue,
@@ -43,7 +44,7 @@ export default {
   },
   methods: {
     onInput: function(value) {
-      this.inputValue = value;
+      this.inputValue = this.getTypeValue(value);
       this.$emit('update-value', this.field, this.inputValue);
     },
     /**
@@ -56,6 +57,13 @@ export default {
         this.$emit('post-value', this.field);
         this.dirtyValue = this.inputValue;
       }
+    },
+    getTypeValue(value) {
+      let r = value;
+      if (this.type === 'boolean') {
+        r = value.target.checked;
+      }
+      return r;
     }
   }
 }

@@ -12,7 +12,7 @@ export default {
                         <sui-table-header-cell/>
                         <sui-table-header-cell :colspan="getSpan" textAlign="right">
                         <div is="sui-button-group">
-                         <sui-button size="small" @click.stop.prevent="onAdd" icon="plus"></sui-button>
+                         <sui-button size="small" @click.stop.prevent="onAdd" icon="plus" ref="addBtn"></sui-button>
                          <sui-button size="small" @click.stop.prevent="onDelete" icon="trash" :disabled="isDeleteDisable"></sui-button>                        
                          </div>
                         </sui-table-header-cell>
@@ -257,8 +257,14 @@ export default {
       });
       return id;
     },
+    /**
+     * Post raw data.
+     *
+     * Use regular api call in order
+     * for return js to be fully evaluate.
+     */
     postRaw: function() {
-      $('#'+this.$root.$el.id).api({
+      jQuery(this.$refs['addBtn'].$el).api({
         on: 'now',
         url: this.data.url,
         method: 'post',
@@ -267,6 +273,8 @@ export default {
     },
     postData: async function(row) {
       let data = {};
+      const context = this.$refs['addBtn'].$el;
+      //console.log(context);
       let fields = this.fieldData.map( field => field.field);
       fields.forEach( field => {
         data[field] = row.filter(item => field in item)[0][field];
@@ -274,7 +282,7 @@ export default {
       //console.log(data);
       data.action = 'update-row';
       try {
-        let response = await atk.apiService.suiFetch(this.data.url, {data: data, method: 'post'});
+        let response = await atk.apiService.suiFetch(this.data.url, {data: data, method: 'post', stateContext:context});
         return response;
       } catch (e) {
         console.error(e);

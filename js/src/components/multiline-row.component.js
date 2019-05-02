@@ -80,16 +80,14 @@ export default {
       let temp = column.default;
       this.values.forEach(field => {
         if (column.field in field) {
-          if (field[column.field]) {
             temp = field[column.field];
-          }
         }
       });
       return temp;
     },
     /**
      * Setup component according to field type.
-     * For now this just support regular input.
+     * For now support input - checkbox.
      *
      * @param column
      * @returns {string}
