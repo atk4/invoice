@@ -29,7 +29,9 @@ export default {
       rows: [],
       fieldData: this.data.fields,
       idField: this.data.idField,
+      eventFields : this.data.eventFields,
       deletables: [],
+      hasChangeCb: this.data.hasChangeCb,
       errors: {}
     }
   },
@@ -47,8 +49,8 @@ export default {
       this.updateRow(rowId, field, value);
     });
 
-    this.$root.$on('post-row', (rowId) => {
-      this.postRow(rowId);
+    this.$root.$on('post-row', (rowId, field) => {
+      this.postRow(rowId, field);
     });
 
     this.$root.$on('toggle-delete', (id) => {
@@ -66,12 +68,6 @@ export default {
         this.rowData.forEach( row => {
           this.deletables.push(this.getId(row));
         });
-      }
-    });
-
-    atk.vueService.eventBus.$on('atkml-get-data', (data) => {
-      if (this.$root.$el.id === data.id) {
-
       }
     });
 
@@ -112,6 +108,10 @@ export default {
         delete this.errors[id];
       }
       this.updateLinesField();
+      // fire change callback if set and field is part of it.
+      if (this.hasChangeCb) {
+        this.postRaw();
+      }
     },
     findRowIndex: function(id){
       for(let i=0; i < this.rowData.length; i++) {
@@ -128,7 +128,7 @@ export default {
      * @param rowId
      * @returns {Promise<void>}
      */
-    postRow: async function(rowId) {
+    postRow: async function(rowId, field) {
       // find proper row index using id.
       let idx = -1;
       for(let i = 0; i < this.rowData.length; i++) {
@@ -141,14 +141,14 @@ export default {
       }
       // server will return expression field  - value if define.
       let resp = await this.postData([...this.rowData[idx]]);
-      console.log(resp);
       if (resp.expressions) {
         let fields = Object.keys(resp.expressions);
         fields.forEach(field => {
           this.updateFieldInRow(idx, field, resp.expressions[field]);
         });
       }
-      if (resp.changeCb) {
+      // fire change callback if set and field is part of it.
+      if (this.hasChangeCb && (this.eventFields.indexOf(field) > -1 ) ) {
         this.postRaw();
       }
     },

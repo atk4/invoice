@@ -15,17 +15,89 @@ use atk4\ui\Template;
 
 class MultiLine extends Generic
 {
+    /**
+     * Layout view as is within form layout.
+     * @var bool
+     */
     public $layoutWrap = false;
+
+    /**
+     * The template need for the multiline view.
+     * @var null
+     */
     public $multiLineTemplate = null;
-    public $multiLine = null;
-    public $linesFieldName = 'lines_field';
-    public $fieldDefs = null;
-    public $cb = null;
+
+    /**
+     * The multiline View.
+     * Assign on init.
+     *
+     * @var null
+     */
+    protected $multiLine = null;
+
+    /**
+     * The definition of each fields used in multiline.
+     *
+     * @var null
+     */
+    private $fieldDefs = null;
+
+    /**
+     * The js callback.
+     *
+     * @var null
+     */
+    private $cb = null;
+
+    /**
+     * The callback function trigger when field
+     * are changed or row are delete.
+     *
+     * @var null
+     */
     public $changeCb = null;
-    public $rowErrors = null;
+
+    /**
+     * An array of fields name that will trigger
+     * the change callback when field are changed.
+     *
+     * @var null
+     */
+    public $eventFields = null;
+
+    /**
+     * Collection of field errors.
+     *
+     * @var null
+     */
+    private $rowErrors = null;
+
+    /**
+     * The model reference use for multi line input.
+     *
+     * @var null
+     */
     public $modelRef = null;
+
+    /**
+     * The link field used for reference.
+     *
+     * @var null
+     */
     public $linkField = null;
+
+    /**
+     * The fields use in each line.
+     *
+     * @var null
+     */
     public $rowFields = null;
+
+    /**
+     * The data sent for each line.
+     *
+     * @var null
+     */
     public $rowData = null;
 
     public function init()
@@ -68,12 +140,25 @@ class MultiLine extends Generic
     }
 
     /**
-     * Add a callback when field are changed.
+     * Add a callback when fields are changed.
+     * It is possible to supply fields that will trigger the
+     * callback when changed. If no fields are supply then callback will trigger
+     * for all fields changed.
      *
      * @param array|\atk4\ui\FormField\jsExpression|callable|string $fx
+     * @param null $fields
+     *
+     * @throws Exception
      */
-    public function onChange($fx)
+    public function onChange($fx, $fields = null)
     {
+        if (!is_callable($fx)) {
+            throw new Exception('Function is required for onChange event.');
+        }
+        if ($fields) {
+            $this->eventFields = $fields;
+        }
+
         $this->changeCb = $fx;
     }
 
@@ -81,6 +166,7 @@ class MultiLine extends Generic
      * Input field collecting multiple rows of data.
      *
      * @return string
+     * @throws \atk4\core\Exception
      */
     public function getInput()
     {
@@ -402,7 +488,9 @@ class MultiLine extends Generic
                                       'linesField'  => $this->short_name,
                                       'fields'      => $this->fieldDefs,
                                       'idField'     => $this->getModel()->id_field,
-                                      'url'         => $this->cb->getJSURL()
+                                      'url'         => $this->cb->getJSURL(),
+                                      'eventFields' => $this->eventFields,
+                                      'hasChangeCb' => $this->changeCb ? true: false,
                                   ]
                               ],
                               'atkMultiline'
@@ -422,7 +510,6 @@ class MultiLine extends Generic
         $response = [
             'success' => true,
             'message' => 'Success',
-            'changeCb' => $this->changeCb ? true : false
         ];
 
         switch ($action) {

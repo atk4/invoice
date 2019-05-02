@@ -53,7 +53,7 @@ export default {
      */
     onBlur: function(e) {
       if (this.isDirty) {
-        this.$emit('post-value');
+        this.$emit('post-value', this.field);
         this.dirtyValue = this.inputValue;
       }
     }

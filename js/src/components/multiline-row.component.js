@@ -67,8 +67,8 @@ export default {
     onUpdateValue: function (field, value) {
       this.$root.$emit('update-row', this.rowId, field, value);
     },
-    onPostRow: function() {
-      this.$root.$emit('post-row', this.rowId);
+    onPostRow: function(field) {
+      this.$root.$emit('post-row', this.rowId, field);
     },
     getReadOnlyValue(column) {
       if (!column.isEditable) {
