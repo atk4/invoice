@@ -1,6 +1,8 @@
 <?php
 /**
- * Allow to add multiple inputs into one table line.
+ * Create a multiple line input field.
+ * Allow to add/edit multiple row of a data table.
+ *
  */
 
 namespace atk4\invoice\FormField;
@@ -33,10 +35,10 @@ class MultiLine extends Generic
      *
      * @var null
      */
-    protected $multiLine = null;
+    private $multiLine = null;
 
     /**
-     * The definition of each fields used in multiline.
+     * The definition of each fields used in each multiline row.
      *
      * @var null
      */
@@ -195,7 +197,7 @@ class MultiLine extends Generic
         $m = null;
         $data = [];
 
-        //set model according to model reference if set or simply the model pass to it.
+        //set model according to model reference if set; or simply the model pass to it.
         if ($this->model->loaded() && $this->modelRef) {
             $m = $this->model->ref($this->modelRef);
         } else if (!$this->modelRef) {
