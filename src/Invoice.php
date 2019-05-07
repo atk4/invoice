@@ -21,14 +21,12 @@ class Invoice extends View
      */
     public $form = null;
 
-    public $jsAction = null;
-
     /**
-     * The multiline field name for form.
+     * The jsAction return by form.
      *
-     * @var string
+     * @var null
      */
-    //public $multiLine = 'ml';
+    public $jsAction = null;
 
     /**
      * Options for the MultiLine Field.
@@ -70,7 +68,7 @@ class Invoice extends View
 
         $ml = $itemLayout->addField('ml', ['MultiLine', 'options' => $this->options]);
         $ml->setModel($m, $m->getItemFields(), $m->itemsRef, $m->itemsRefId);
-        $ml->onChange([$m, 'jsUpdateFields'], $m->getEventFields());
+        $ml->onLineChange([$m, 'jsUpdateFields'], $m->getEventFields());
 
         $columnsLayout = $this->form->layout->addSubLayout('Columns');
         $columnsLayout->addColumn(12);
