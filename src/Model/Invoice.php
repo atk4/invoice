@@ -20,6 +20,12 @@ class Invoice extends \atk4\data\Model
     public $itemsRef = null;
     public $itemsRefId = null;
 
+    public $billTo = null;
+    public $billToRef = null;
+
+    public $paiement = null;
+    public $paiementRef = null;
+
     public $headerFields = null;
     public $footerFields = null;
 
@@ -28,28 +34,33 @@ class Invoice extends \atk4\data\Model
     {
         parent::init();
 
-        if (!$this->items) {
-            throw new Exception('Items model need to be set.');
+        if (!$this->items || !$this->itemsRef || !$this->itemsRefId) {
+            throw new Exception('Items, ItemsRef or itemsRefId need to be set.');
         }
 
         $this->addField('reference', ['required' => true, 'ui' => ['form' => ['width' => 'six']]]);
 
-        $this->addField('date', ['type' => 'date', 'default' => new \DateTime(), 'required' => true, 'ui' => ['form' => ['width' => 'four']]]);
-        $this->addField('due_date', ['type' => 'date', 'default' => (new \DateTime())->add(new \DateInterval('P'.$this->period.'D')),'ui' => ['form' => ['width' => 'four']]]);
+        $this->addField('date', ['type' => 'date', 'default' => new \DateTime(), 'required' => true/*, 'ui' => ['form' => ['width' => 'four']]*/]);
+        $this->addField('due_date', ['type' => 'date', 'default' => (new \DateTime())->add(new \DateInterval('P'.$this->period.'D'))/*,'ui' => ['form' => ['width' => 'four']]*/]);
 
-        $this->hasOne('bill_to_id', new \atk4\invoice\Model\Client(), ['required' => true, 'ui' => ['form' => ['width' => 'three']]]);
+        if ($this->billTo) {
+            $this->hasOne($this->billToRef, $this->billTo, ['required' => true/*, 'ui' => ['form' => ['width' => 'three']]*/]);
+        }
+
+        if ($this->paiement) {
+            $this->hasMany('Paiements', new Paiement())->addField('paid_total', ['aggregate' => 'sum', 'field' => 'amount', 'type' => 'money'/*, 'ui' => ['form' => ['width' => 'three']]*/]);
+        }
 
         $this->hasMany($this->itemsRef, $this->items)->addField('sub_total', ['aggregate'=>'sum', 'field'=>'amount', 'type' => 'money']);
 
         $this->addExpression('tax', ['expr' => "[sub_total] * {$this->taxRate}", 'type' => 'money']);
         $this->addExpression('g_total', ['expr' => '[sub_total]+[tax]', 'type' => 'money']);
 
-        $this->hasMany('Paiements', new Paiement())->addField('paid_total', ['aggregate' => 'sum', 'field' => 'amount', 'type' => 'money', 'ui' => ['form' => ['width' => 'three']]]);
 
         $this->addExpression('balance', ['expr' => '[g_total] - [paid_total]', 'type' => 'money']);
 
-        $this->headerFields = ['reference', 'date', 'due_date', 'bill_to_id', 'paid_total'];
-        $this->footerFields = ['sub_total', 'tax', 'g_total'];
+        //$this->headerFields = ['reference', 'date', 'due_date', 'bill_to_id', 'paid_total'];
+        //$this->footerFields = ['sub_total', 'tax', 'g_total'];
     }
 
     /**
@@ -60,6 +71,16 @@ class Invoice extends \atk4\data\Model
     public function getHeaderFields()
     {
         return $this->headerFields;
+    }
+
+    /**
+     * Return Items model table caption.
+     *
+     * @return mixed
+     */
+    public function getItemsTableCaption()
+    {
+        return $this->items->tableCaption;
     }
 
     /**

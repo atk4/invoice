@@ -64,7 +64,7 @@ class Invoice extends View
         $headerGroup->setModel($m, $m->getHeaderFields());
 
         $itemLayout = $this->form->layout->addSubLayout('Generic');
-        $itemLayout->add(['Header', $m->items->tableCaption, 'size' => 4]);
+        $itemLayout->add(['Header', $m->getItemsTableCaption(), 'size' => 4]);
 
         $ml = $itemLayout->addField('ml', ['MultiLine', 'options' => $this->options]);
         $ml->setModel($m, $m->getItemFields(), $m->itemsRef, $m->itemsRefId);
