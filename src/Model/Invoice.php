@@ -11,6 +11,8 @@ class Invoice extends \atk4\data\Model
 {
     public $table = 'invoice';
 
+    public $title_field = 'reference';
+
     public $period = '30';
     public $taxRate = 0.1;
 
@@ -26,7 +28,7 @@ class Invoice extends \atk4\data\Model
 
         $this->hasOne('bill_to_id', new Client(), ['required' => true, 'ui' => ['form' => ['width' => 'three']]])->addField('client', 'name');
 
-        $this->hasMany('Paiements', new Paiement())->addField('paid_total', ['aggregate' => 'sum', 'field' => 'amount', 'type' => 'money', 'ui' => ['form' => ['width' => 'three']]]);
+        $this->hasMany('Payments', new Payment())->addField('paid_total', ['aggregate' => 'sum', 'field' => 'amount', 'type' => 'money', 'ui' => ['form' => ['width' => 'three']]]);
 
         $this->hasMany('Items', new InvoiceItems())->addField('sub_total', ['aggregate'=>'sum', 'field'=>'amount', 'type' => 'money']);
 

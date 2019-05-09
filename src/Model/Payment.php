@@ -7,9 +7,9 @@ namespace atk4\invoice\Model;
 
 use atk4\data\Model;
 
-class Paiement extends Model
+class Payment extends Model
 {
-    public $table = 'paiement';
+    public $table = 'payment';
     public $title_field = 'method';
 
     public function init()
@@ -22,6 +22,6 @@ class Paiement extends Model
         $this->addField('details');
 
         $this->hasOne('invoice_id', new Invoice());
-        $this->hasOne('client_id', new Client());
+        $this->hasOne('client_id', new Client(), ['ui' => ['is_visible' => false]]);
     }
 }

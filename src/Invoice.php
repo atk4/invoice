@@ -6,6 +6,7 @@
 
 namespace atk4\invoice;
 
+use atk4\ui\BreadCrumb;
 use atk4\ui\Exception;
 use atk4\ui\Form;
 use atk4\ui\jQuery;
@@ -24,7 +25,7 @@ class Invoice extends View
      */
     public $form = null;
 
-    public $formEdit = null;
+    public $invoiceEditPage = null;
 
     /**
      * The jsAction return by form.
@@ -91,21 +92,36 @@ class Invoice extends View
 
     public $action;
 
+    public $hasPayment = false;
+    public $paymentPage = null;
+
+    public $crumb;
+    private $modelId;
+
     public function init()
     {
         parent::init();
 
         $this->app->useSuiVue();
 
+        $this->modelId = $this->stickyGet('id');
+
+        //$this->crumb = new BreadCrumb([null, 'big']);
+        $page = $this->getPage();
+
         if (!$this->jsAction) {
             $this->jsAction = new jsToast('Saved!');
         }
 
-        $this->formEdit = $this->add(['VirtualPage', 'urlTrigger' => 'edit']);
+        $this->invoiceEditPage = $this->add(['VirtualPage', 'urlTrigger' => 'invoice']);
         if (!$this->form) {
             $this->form = new Form();
         }
-        $this->formEdit->add($this->form);
+
+        if ($this->hasPayment) {
+            $this->paymentPage = $this->add(['VirtualPage', 'urlTrigger' => 'payment']);
+            //$this->setPaymentPage();
+        }
 
         $this->displayInvoices();
 
@@ -120,9 +136,15 @@ class Invoice extends View
     {
         $g = $this->add('Grid');
         $g->setModel($this->model, $this->tableFields);
+        $g->menu->addItem(['Add Invoice', 'icon' => 'plus'])->link($this->invoiceEditPage->getURL());
         $g->addQuickSearch(['reference', 'date', 'due_date'], true);
 
-        $g->addAction(['icon' => 'edit'], $this->jsIIF($this->formEdit->getURL()) );
+        $g->addAction(['icon' => 'edit'], $this->jsIIF($this->invoiceEditPage->getURL()));
+
+        if ($this->hasPayment) {
+            $g->addAction(['icon' => 'dollar sign'], $this->jsIIF($this->paymentPage->getURL()));
+        }
+
         $g->addAction(['icon' => 'trash'], function ($jschain, $id) {
             $this->model->load($id)->delete();
 
@@ -130,8 +152,35 @@ class Invoice extends View
         }, 'Are you sure?');
     }
 
+
+    public function setPaymentPage($crumbTitle, $paymentModel, $paymentRef)
+    {
+        if (!($this->getPage() === 'payment')) {
+            return;
+        }
+        $crumb = $this->paymentPage->add(['BreadCrumb',null, 'big']);
+
+        $this->paymentPage->add(['ui' =>'divider']);
+
+        $crumb->addCrumb($crumbTitle, $this->url([], true));
+
+        $paymentModel->addCondition($paymentRef, $this->id);
+
+
+        $g = $this->paymentPage->add('Grid');
+
+
+        $g->setModel($paymentModel);
+    }
+
+    public function getPage()
+    {
+        return array_search('callback', $_GET);
+    }
+
     /**
      * Return an IIF js function that will set document.location via javascript.
+     *
      * @param $url
      *
      * @return jsExpression
@@ -177,25 +226,37 @@ class Invoice extends View
      * @throws Exception
      * @throws \atk4\data\Exception
      */
-    public function setFormLayout($headerCaption, $itemCaption, $onChangeMethod = null)
+    public function setInvoiceEditPage($crumbTitle, $itemCaption, $onChangeMethod = null)
     {
+        if (!($this->getPage() === 'invoice')) {
+            return;
+        }
+
         if (!$this->model) {
             throw new Exception('Model need to be set for this method.');
         }
 
-        $id = $this->stickyGet('id');
+        $crumb = $this->invoiceEditPage->add(['BreadCrumb',null, 'big']);
 
-        if ($id) {
-            $this->model->load($id);
+        $this->invoiceEditPage->add(['ui' =>'divider']);
+
+        $crumb->addCrumb($crumbTitle, $this->url([], true));
+
+        $this->invoiceEditPage->add($this->form);
+
+        if ($this->modelId) {
+            $this->model->load($this->modelId);
+            $crumb->addCrumb($this->model->getTitle());
+        } else {
+            $crumb->addCrumb('New Invoice');
         }
+        $crumb->popTitle();
 
-        //$this->form->add(['Button', 'Cancel'])->on('click', $this->jsReload(['action' => null]));
         $this->form->add(['Button', 'Cancel'])->link($this->url([], true));
 
         $m = $this->form->setModel($this->model, false);
 
         $headerLayout = $this->form->layout->addSubLayout('Generic');
-        $headerLayout->add(['Header', $headerCaption, 'size' => 4]);
         $headerGroup = $headerLayout->addGroup();
         $headerGroup->setModel($m, $this->headerFields);
 
