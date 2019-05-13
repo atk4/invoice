@@ -25,7 +25,7 @@ class InvoiceMgr extends View
 
     public $itemRef = 'Items';
     public $itemLink = 'invoice_id';
-    
+
     public function init()
     {
         parent::init();
