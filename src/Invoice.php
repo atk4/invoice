@@ -115,6 +115,11 @@ class Invoice extends View
         }
     }
 
+    /**
+     * Callback for setting printing page.
+     *
+     * @param $fx
+     */
     public function setPrintPage($fx)
     {
         if (!($this->getPage('popup') === 'print')) {
@@ -122,6 +127,11 @@ class Invoice extends View
         }
 
         call_user_func_array($fx, [$this->printPage, $this->modelId]);
+    }
+
+    public function getDir($dirName)
+    {
+        return dirname(__DIR__).'/'.$dirName;
     }
 
     /**
@@ -156,7 +166,7 @@ class Invoice extends View
      *
      * @return false|int|string
      */
-    public function getPage($type = 'callbalck')
+    public function getPage($type = 'callback')
     {
         return array_search($type, $_GET);
     }
