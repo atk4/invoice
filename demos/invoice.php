@@ -61,15 +61,31 @@ $invoice->setInvoicePage(function($page, $id) use ($app, $invoice, $invoice_mode
 });
 
 $invoice->setPrintPage(function($page, $id) use ($app, $invoice, $invoice_model) {
-    $invoice_model->load($id);
+    $invoice_items = $invoice_model->load($id)->ref('Items');
+    $container = $page->add('View')->setStyle(['width' => '900px', 'margin-top' => '20px']);
+    $gl_top = $container->add(['GridLayout', ['rows' => 5, 'columns' => 2]])->setStyle(['width' => '900px', 'margin-top' => '20px']);
 
+    $t = $invoice->getDir('template').'/company.html';
 
-    $gl = $page->add(['GridLayout', ['rows' => 5, 'columns' => 2]]);
+    $comp_view = $gl_top->add(['View', 'defaultTemplate' => $t], 'r1c1');
+    $comp_view->template->set('name', 'My Company');
+    $comp_view->template->set('image', $invoice->getDir('public').'/images/logo.png');
 
-    $comp_info =
-    $inv_info = $gl->add('View', 'r1c2');
+    $inv_info = $gl_top->add('View', 'r1c2');
     $inv_info->add(['Header', 'Invoice', 'subHeader' => '#'.$invoice_model->getTitle()])->addClass('aligned right');
     $inv_info->add(['Header', 'Balance', 'size' => 3, 'subHeader' => $invoice->get('balance')])->addClass('aligned right');
+
+    $table_view  = $container->add(['View']);
+    $table = $table_view->add('Table')->setModel($invoice_items);
+
+    $container->add(['ui' => 'hidden divider']);
+
+    $gl_bottom = $container->add(['GridLayout', ['rows' => 1, 'columns' => 4]]);
+    $card_container = $gl_bottom->add(['View', 'ui' => 'aligned right'], 'r1c4');
+    $card = $card_container->add(['Card', 'header' => false]);
+    $card->setModel($invoice_model, ['sub_total', 'tax', 'g_total', 'balance']);
+
+
 
 });
 
