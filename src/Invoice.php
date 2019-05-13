@@ -7,6 +7,7 @@
 namespace atk4\invoice;
 
 use atk4\ui\Exception;
+use atk4\ui\Grid;
 use atk4\ui\jQuery;
 use atk4\ui\jsExpression;
 use atk4\ui\jsToast;
@@ -24,7 +25,15 @@ class Invoice extends View
     public $hasPayment = false;
     public $paymentPage = null;
 
+    public $printPage = null;
+
+    public $grid = null;
+    public $ipp = 10;
+
     private $modelId;
+    private $page;
+    private $sortBy;
+    private $search;
 
     public function init()
     {
@@ -32,8 +41,14 @@ class Invoice extends View
 
         $this->app->useSuiVue();
 
-        $this->modelId = $this->stickyGet('id');
+        if (!$this->grid) {
+            $this->grid = new Grid(['paginator' => ['urlTrigger' => 'p'], 'sortTrigger' => 'sortBy']);
+        }
 
+        $this->modelId = $this->stickyGet('id');
+        $this->page    = $this->stickyGet('p');
+        $this->sortBy  = $this->stickyGet('sortBy');
+        $this->search  = $this->stickyGet('_q');
 
         if (!$this->jsAction) {
             $this->jsAction = new jsToast('Saved!');
@@ -45,6 +60,8 @@ class Invoice extends View
             $this->paymentPage = $this->add(['VirtualPage', 'urlTrigger' => 'payment']);
         }
 
+        $this->printPage = $this->add(['VirtualPage', 'urlTrigger' => 'print']);
+
         $this->displayInvoices();
     }
 
@@ -55,10 +72,13 @@ class Invoice extends View
      */
     public function displayInvoices()
     {
-        $g = $this->add('Grid');
+        $g = $this->add($this->grid);
+        $g->ipp = $this->ipp;
         $g->setModel($this->model, $this->tableFields);
         $g->menu->addItem(['Add Invoice', 'icon' => 'plus'])->link($this->invoicePage->getURL());
         $g->addQuickSearch(['reference', 'date', 'due_date'], true);
+        $g->quickSearch->useAjax = false;
+        $g->quickSearch->initValue = $this->search;
 
         $g->addAction(['icon' => 'edit'], $this->jsIIF($this->invoicePage->getURL()));
 
@@ -66,11 +86,42 @@ class Invoice extends View
             $g->addAction(['icon' => 'dollar sign'], $this->jsIIF($this->paymentPage->getURL()));
         }
 
+        $g->addAction(['icon' => 'print'], $this->jsIIF($this->printPage->getURL('popup')));
+
+
         $g->addAction(['icon' => 'trash'], function ($jschain, $id) {
             $this->model->load($id)->delete();
 
             return $jschain->closest('tr')->transition('fade left');
         }, $this->confirmMsg);
+    }
+
+    /**
+     * Return a typecast field model value if available.
+     *
+     * @param $field
+     *
+     * @return mixed
+     *
+     * @throws \atk4\core\Exception
+     * @throws \atk4\data\Exception
+     */
+    public function get($field)
+    {
+        if ($this->app->ui_persistence) {
+            return $this->app->ui_persistence->typecastSaveField($this->model->getElement($field), $this->model->get($field));
+        } else {
+            return $this->model->get($field);
+        }
+    }
+
+    public function setPrintPage($fx)
+    {
+        if (!($this->getPage('popup') === 'print')) {
+            return;
+        }
+
+        call_user_func_array($fx, [$this->printPage, $this->modelId]);
     }
 
     /**
@@ -83,7 +134,6 @@ class Invoice extends View
         if (!($this->getPage() === 'invoice')) {
             return;
         }
-
         call_user_func_array($fx, [$this->invoicePage, $this->modelId]);
     }
 
@@ -106,9 +156,9 @@ class Invoice extends View
      *
      * @return false|int|string
      */
-    public function getPage()
+    public function getPage($type = 'callbalck')
     {
-        return array_search('callback', $_GET);
+        return array_search($type, $_GET);
     }
 
     /**
@@ -128,20 +178,28 @@ class Invoice extends View
     }
 
     /**
-     * Redefine url function.
-     * When isClean is true, will remove all query parameter.
-     *
-     * @param array $page
-     * @param bool $isClean
+     * Manage url for this view.
      *
      * @return string
      */
-//    public function url($page = [], $isClean = false)
-//    {
-//        $url = parent::url($page);
-//        if ($isClean) {
-//            $url = strtok($url, '?');
-//        }
-//        return $url;
-//    }
+    public function getURL()
+    {
+        $params = [];
+        $url = strtok($this->url(), '?');
+        if ($this->page) {
+            $params[$this->grid->paginator->urlTrigger] = $this->page;
+        }
+        if ($this->sortBy) {
+            $params[$this->grid->sortTrigger] = $this->sortBy;
+        }
+        if ($this->search) {
+            $params['_q'] = $this->search;
+        }
+
+        if ($query = http_build_query($params)){
+            $url  = $url.'?'.$query;
+        };
+
+        return $url;
+    }
 }

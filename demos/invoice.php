@@ -9,19 +9,19 @@ $invoice = $app->add(new \atk4\invoice\Invoice([
                                                    'hasPayment'     => true
                                                ]));
 
+// set page for editing invoice.
 $invoice->setInvoicePage(function($page, $id) use ($app, $invoice, $invoice_model) {
 
     $crumb = $page->add(['BreadCrumb',null, 'big']);
 
     $page->add(['ui' =>'divider']);
 
-    $crumb->addCrumb('Invoices', $app->url('invoice-addon.php'));
+    $crumb->addCrumb('Invoices', $invoice->getURL());
 
     $m = $page->add('Menu');
-    $m->addItem(['Add Payment', 'icon' => 'plus'])->link($invoice->paymentPage->getURL());
-    //$m->addItem(['Edit '.$invoice_model->getTitle(), 'icon' => 'edit'])->link($invoice->invoicePage->getURL());
+    $m->addItem(['Payments', 'icon' => 'dollar sign'])->link($invoice->paymentPage->getURL());
 
-    $form = $page->add(['Form']);
+    $form = $page->add(['Form', 'canLeave' => false]);
 
     if ($id) {
         $invoice_model->load($id);
@@ -31,7 +31,7 @@ $invoice->setInvoicePage(function($page, $id) use ($app, $invoice, $invoice_mode
     }
     $crumb->popTitle();
 
-    $form->add(['Button', 'Cancel'])->link('invoice-addon.php');
+    $form->add(['Button', 'Back'])->link($invoice->url());
 
     $m = $form->setModel($invoice_model, false);
 
@@ -56,15 +56,29 @@ $invoice->setInvoicePage(function($page, $id) use ($app, $invoice, $invoice_mode
     $form->onSubmit(function($f) use ($ml, $app) {
         $f->model->save();
         $ml->saveRows();
-        return $app->jsRedirect('invoice-addon.php');
+        return new \atk4\ui\jsToast('Saved!');
     });
 });
 
+$invoice->setPrintPage(function($page, $id) use ($app, $invoice, $invoice_model) {
+    $invoice_model->load($id);
+
+
+    $gl = $page->add(['GridLayout', ['rows' => 5, 'columns' => 2]]);
+
+    $comp_info =
+    $inv_info = $gl->add('View', 'r1c2');
+    $inv_info->add(['Header', 'Invoice', 'subHeader' => '#'.$invoice_model->getTitle()])->addClass('aligned right');
+    $inv_info->add(['Header', 'Balance', 'size' => 3, 'subHeader' => $invoice->get('balance')])->addClass('aligned right');
+
+});
+
+// set payment page.
 $invoice->setPaymentPage(function($page, $id) use ($app, $invoice, $payment_model, $invoice_model) {
     $invoice_model->load($id);
     $payment_model->addCondition('invoice_id', $id);
 
-    $balance = 'Balance: '.$app->ui_persistence->typecastSaveField($invoice_model->getElement('balance'), $invoice_model->get('balance'));
+    $balance = 'Balance: '.$invoice->get('balance');
 
     // setup payment editing page.
     $paymentEdit = $page->add(['VirtualPage', 'urlTrigger' => 'p-edit']);
@@ -73,14 +87,14 @@ $invoice->setPaymentPage(function($page, $id) use ($app, $invoice, $payment_mode
 
     $paymentEdit->add(['Header', $balance]);
     $editCrumb->addCrumb('Invoices', 'invoice-addon.php');
-    $editCrumb->addCrumb($invoice_model->getTitle(), $invoice->paymentPage->getURL());
+    $editCrumb->addCrumb($invoice_model->getTitle().' \'s payments', $invoice->paymentPage->getURL());
 
     $pId = $page->stickyGet('pId');
     if ($pId) {
         $payment_model->load($pId);
-        $editCrumb->addCrumb('Edit');
+        $editCrumb->addCrumb('Edit payment');
     } else {
-        $editCrumb->addCrumb('New');
+        $editCrumb->addCrumb('New payment');
     }
     $editCrumb->popTitle();
 
@@ -97,13 +111,13 @@ $invoice->setPaymentPage(function($page, $id) use ($app, $invoice, $payment_mode
     $crumb = $page->add(['BreadCrumb',null, 'big']);
     $page->add(['ui' =>'divider']);
 
-    $crumb->addCrumb('Invoices', 'invoice-addon.php');
-    $crumb->addCrumb($invoice_model->getTitle());
+    $crumb->addCrumb('Invoices', $invoice->getUrl());
+    $crumb->addCrumb($invoice_model->getTitle().' \'s payments');
     $crumb->popTitle();
 
     $m = $page->add('Menu');
     $m->addItem(['Add Payment', 'icon' => 'plus'])->link($paymentEdit->getURL());
-    $m->addItem(['Edit '.$invoice_model->getTitle(), 'icon' => 'edit'])->link($invoice->invoicePage->getURL());
+    $m->addItem(['Edit Invoice', 'icon' => 'edit'])->link($invoice->invoicePage->getURL());
 
     $gl = $page->add(['GridLayout', ['columns'=>3, 'rows'=>1]]);
     $seg = $gl->add(['View', 'ui' => 'basic segment'], 'r1c1');
@@ -112,6 +126,7 @@ $invoice->setPaymentPage(function($page, $id) use ($app, $invoice, $payment_mode
 
     $page->add(['ui' =>'hidden divider']);
 
+    // Add payment table.
     $g = $page->add('Table');
     $g->setModel($payment_model);
     $actions = $g->addColumn(null, 'Actions');
@@ -122,4 +137,3 @@ $invoice->setPaymentPage(function($page, $id) use ($app, $invoice, $payment_mode
     }, $invoice->confirmMsg);
 
 });
-
