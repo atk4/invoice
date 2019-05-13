@@ -13,25 +13,27 @@ class Invoice extends \atk4\data\Model
 
     public $title_field = 'reference';
 
-    public $period = '30';
+    public $period = '30'; //todo remove to ui builder code.
     public $taxRate = 0.1;
 
 
     public function init()
     {
         parent::init();
+        //todo auto detect expression for footer field
 
         $this->addField('reference', ['required' => true, 'ui' => ['form' => ['width' => 'six']]]);
 
         $this->addField('date', ['type' => 'date', 'default' => new \DateTime(), 'required' => true, 'ui' => ['form' => ['width' => 'four']]]);
         $this->addField('due_date', ['type' => 'date', 'default' => (new \DateTime())->add(new \DateInterval('P'.$this->period.'D')),'ui' => ['form' => ['width' => 'four']]]);
 
-        $this->hasOne('bill_to_id', new Client(), ['required' => true, 'ui' => ['form' => ['width' => 'three']]])->addField('client', 'name');
+        $this->hasOne('client_id', new Client(), ['required' => true, 'ui' => ['form' => ['width' => 'three']]])->addField('client', 'name');
 
         $this->hasMany('Payments', new Payment())->addField('paid_total', ['aggregate' => 'sum', 'field' => 'amount', 'type' => 'money','caption' => 'Paid', 'ui' => ['form' => ['width' => 'three']]]);
 
         $this->hasMany('Items', new InvoiceItems())->addField('sub_total', ['aggregate'=>'sum', 'field'=>'amount', 'type' => 'money']);
 
+        //todo move tax rate into expression
         $this->addExpression('tax', ['expr' => "[sub_total] * {$this->taxRate}", 'type' => 'money']);
         $this->addExpression('g_total', ['expr' => '[sub_total]+[tax]', 'type' => 'money']);
 
@@ -44,6 +46,8 @@ class Invoice extends \atk4\data\Model
      * @param $rows  The items rows with new value.
      * @param $f     The form where multiline is set.
      *
+     * //TODO move to traits
+     * // todo check if exist
      * @return array
      */
     public function jsUpdateFields($rows, $f)
