@@ -13,18 +13,18 @@ class InvoiceMgr extends View
     public $invoice = null;
 
     public $invoiceModel = null;
-    public $tableFields = ['reference', 'client', 'date', 'due_date', 'g_total', 'balance'];
-    public $headerFields = ['reference', 'date', 'due_date', 'client_id', 'paid_total'];
-    public $footerFields = ['sub_total', 'tax', 'g_total'];
-    public $itemFields =  ['item', 'qty', 'rate', 'amount'];
+    public $tableFields = null;
+    public $headerFields = [];
+    public $footerFields = [];
+    public $itemFields =  null;
 
     public $paymentModel = null;
-    public $paymentRelations = ['invoice_id' => 'id', 'client_id' => 'client_id'];
-    public $paymentEditFields = ['method', 'paid_on', 'amount', 'details'];
-    public $paymentDisplayFields = ['client','balance', 'paid_total','g_total'];
+    public $paymentRelations = null;
+    public $paymentEditFields = null;
+    public $paymentDisplayFields = null;
 
-    public $itemRef = 'Items';
-    public $itemLink = 'invoice_id';
+    public $itemRef = null;
+    public $itemLink = null;
 
     public function init()
     {
