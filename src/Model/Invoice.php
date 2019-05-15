@@ -9,6 +9,8 @@ use atk4\ui\Exception;
 
 class Invoice extends \atk4\data\Model
 {
+    use \atk4\invoice\Traits\SimpleTax;
+
     public $table = 'invoice';
 
     public $title_field = 'reference';
@@ -40,56 +42,4 @@ class Invoice extends \atk4\data\Model
         $this->addExpression('balance', ['expr' => '[g_total] - [paid_total]', 'type' => 'money']);
     }
 
-    /**
-     * Update field value in form via javascript when onChange event is fire on MultiLine.
-     *
-     * @param $rows  The items rows with new value.
-     * @param $f     The form where multiline is set.
-     *
-     * //TODO move to traits
-     * // todo check if exist
-     * @return array
-     */
-    public function jsUpdateFields($rows, $f)
-    {
-        $s_total = $this->getSubTotal($rows);
-        $tax = $this->getTotalTax($s_total);
-        return [
-            $f->getField('sub_total')->jsInput()->val(number_format($s_total, 2)),
-            $f->getField('tax')->jsInput()->val(number_format($tax, 2)),
-            $f->getField('g_total')->jsInput()->val(number_format($s_total + $tax, 2))
-        ];
-    }
-
-    /**
-     * Return total of each item in a row.
-     *
-     * @param $itemRows
-     *
-     * @return float|int
-     */
-    protected function getSubTotal($itemRows)
-    {
-        $s_total = 0;
-        foreach ($itemRows as $row => $cols) {
-            $qty = array_column($cols, 'qty')[0];
-            $rate = array_column($cols, 'rate')[0];
-            $s_total = $s_total + ($qty * $rate);
-        }
-        $this->total = $s_total;
-
-        return $s_total;
-    }
-
-    /**
-     * Return tax amount from total amount.
-     *
-     * @param $total
-     *
-     * @return float|int
-     */
-    protected function getTotalTax($total)
-    {
-        return $total * $this->taxRate;
-    }
 }
