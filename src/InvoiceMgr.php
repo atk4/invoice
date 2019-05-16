@@ -43,7 +43,7 @@ class InvoiceMgr extends View
                                 'hasPayment'     => $this->paymentModel ? true : false,
                             ]));
 
-        
+
         // set page for editing invoice.
         $this->invoice->setInvoicePage(function($page, $id) {
 
@@ -207,6 +207,7 @@ class InvoiceMgr extends View
         forEach($refs as $ref) {
             if ($ref->model->table === $related->table) {
                 $link = $ref->link;
+                break;
             }
         }
         return $link;
