@@ -5,6 +5,9 @@
 
 namespace atk4\invoice;
 
+use atk4\data\Model;
+use atk4\invoice\Model\Client;
+use atk4\invoice\Model\Payment;
 use atk4\ui\Exception;
 use atk4\ui\View;
 
@@ -40,7 +43,7 @@ class InvoiceMgr extends View
                                 'hasPayment'     => $this->paymentModel ? true : false,
                             ]));
 
-
+        
         // set page for editing invoice.
         $this->invoice->setInvoicePage(function($page, $id) {
 
@@ -122,7 +125,7 @@ class InvoiceMgr extends View
         // set payment page.
         $this->invoice->setPaymentPage(function($page, $id) {
             $this->invoiceModel->load($id);
-            $this->paymentModel->addCondition('invoice_id', $id);
+            $this->paymentModel->addCondition($this->findRelatedField($this->paymentModel, $this->invoiceModel), $id);
 
             $balance = 'Balance: '.$this->invoice->get('balance');
 
@@ -185,5 +188,27 @@ class InvoiceMgr extends View
                 return [$js->closest('tr')->transition('fade left'), $seg->jsReload()];
             }, $this->invoice->confirmMsg);
         });
+    }
+
+    /**
+     * Find a related field between two model reference.
+     * Link is field id for hasOne relation or the Reference name
+     * for hasMany relation.
+     *
+     * @param Model $model
+     * @param Model $related
+     *
+     * @return string|null
+     */
+    public function findRelatedField(Model $model, Model $related)
+    {
+        $link = null;
+        $refs = $model->getRefs();
+        forEach($refs as $ref) {
+            if ($ref->model->table === $related->table) {
+                $link = $ref->link;
+            }
+        }
+        return $link;
     }
 }

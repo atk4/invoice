@@ -22,7 +22,7 @@ trait SimpleTax
         }
 
         $s_total = $this->getSubTotal($rows);
-        $tax = $this->getTotalTax($s_total);
+        $tax = $s_total * $this->get('tax_rate');
         return [
             $f->getField('sub_total')->jsInput()->val(number_format($s_total, 2)),
             $f->getField('tax')->jsInput()->val(number_format($tax, 2)),
@@ -50,15 +50,4 @@ trait SimpleTax
         return $s_total;
     }
 
-    /**
-     * Return tax amount from total amount.
-     *
-     * @param $total
-     *
-     * @return float|int
-     */
-    protected function getTotalTax($total)
-    {
-        return $total * $this->taxRate;
-    }
 }
