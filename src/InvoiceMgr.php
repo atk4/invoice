@@ -135,7 +135,7 @@ class InvoiceMgr extends View
             $paymentEdit->add(['ui' =>'divider']);
 
             $paymentEdit->add(['Header', $balance]);
-            $editCrumb->addCrumb('Invoices', 'invoice-addon.php');
+            $editCrumb->addCrumb('Invoices', $this->invoice->getURL());
             $editCrumb->addCrumb($this->invoiceModel->getTitle().' \'s payments', $this->invoice->paymentPage->getURL());
 
             $pId = $page->stickyGet('pId');
