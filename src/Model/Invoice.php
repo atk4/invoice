@@ -35,13 +35,13 @@ class Invoice extends \atk4\data\Model
 
         $this->hasMany('Payments', new Payment())->addField('paid_total', ['aggregate' => 'sum', 'field' => 'amount', 'type' => 'money','caption' => 'Paid', 'ui' => ['form' => ['width' => 'three']]]);
 
-        $this->hasMany('Items', new InvoiceItems())->addField('sub_total', ['aggregate'=>'sum', 'field'=>'amount', 'type' => 'money']);
+        $this->hasMany('Items', new InvoiceItems())->addField('subtotal', ['aggregate'=>'sum', 'field'=>'amount', 'type' => 'money']);
 
         //todo move tax rate into expression
-        $this->addExpression('tax', ['expr' => "[sub_total] * [tax_rate]", 'type' => 'money']);
-        $this->addExpression('g_total', ['expr' => '[sub_total]+[tax]', 'type' => 'money']);
+        $this->addExpression('tax', ['expr' => "[subtotal] * [tax_rate]", 'type' => 'money']);
+        $this->addExpression('total', ['expr' => '[subtotal]+[tax]', 'type' => 'money']);
 
-        $this->addExpression('balance', ['expr' => '[g_total] - [paid_total]', 'type' => 'money']);
+        $this->addExpression('balance', ['expr' => '[total] - [paid_total]', 'type' => 'money']);
     }
 
 }

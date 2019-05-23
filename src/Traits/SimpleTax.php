@@ -1,6 +1,10 @@
 <?php
 /**
  * Apply some method for calculating total.
+ * InvoiceMgr will call jsUpdateField when field from invoice line are change.
+ * It is possible to use another traits, just make sure all your field value update
+ * goes via jsUpdateFields($rows, $f) method and that your traits implements this method.
+ *
  */
 namespace atk4\invoice\Traits;
 
@@ -17,17 +21,24 @@ trait SimpleTax
     public function jsUpdateFields($rows, $f)
     {
 
-        if (!$this->getElement('sub_total') || !$this->getElement('tax') || !$this->getElement('g_total')) {
+        if (!$this->getElement('subtotal') || !$this->getElement('tax') || !$this->getElement('total')) {
             return;
         }
 
         $s_total = $this->getSubTotal($rows);
-        $tax = $s_total * $this->get('tax_rate');
-        return [
-            $f->getField('sub_total')->jsInput()->val(number_format($s_total, 2)),
-            $f->getField('tax')->jsInput()->val(number_format($tax, 2)),
-            $f->getField('g_total')->jsInput()->val(number_format($s_total + $tax, 2))
-        ];
+        $tax = $this->getTotalTax($s_total);
+        $resp = [];
+        if ($field = $f->getField('subtotal')){
+            $resp[] = $field->jsInput()->val(number_format($s_total, 2));
+        }
+        if ($field =  $f->getField('tax')) {
+            $resp[] = $field->jsInput()->val(number_format($tax, 2));
+        }
+        if ($field = $f->getField('total')) {
+            $resp[] = $field->jsInput()->val(number_format($s_total + $tax, 2));
+        }
+
+        return $resp;
     }
 
     /**
@@ -50,4 +61,15 @@ trait SimpleTax
         return $s_total;
     }
 
+    /**
+     * Return tax amount from total amount.
+     *
+     * @param $total
+     *
+     * @return float|int
+     */
+    protected function getTotalTax($total)
+    {
+        return $total * $this->get('tax_rate');
+    }
 }
