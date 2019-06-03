@@ -54,7 +54,9 @@ class InvoiceMgr extends View
             $crumb->addCrumb('Invoices', $this->invoice->getURL());
 
             $m = $page->add('Menu');
-            $m->addItem(['Payments', 'icon' => 'dollar sign'])->link($this->invoice->paymentPage->getURL());
+            if ($this->paymentModel) {
+                $m->addItem(['Payments', 'icon' => 'dollar sign'])->link($this->invoice->paymentPage->getURL());
+            }
 
             $form = $page->add(['Form', 'canLeave' => false]);
 
@@ -123,71 +125,76 @@ class InvoiceMgr extends View
         });
 
         // set payment page.
-        $this->invoice->setPaymentPage(function($page, $id) {
-            $this->invoiceModel->load($id);
-            $this->paymentModel->addCondition($this->findRelatedField($this->paymentModel, $this->invoiceModel), $id);
+        if ($this->paymentModel) {
+            // set payment page.
+            $this->invoice->setPaymentPage(function($page, $id) {
+                $this->invoiceModel->load($id);
+                $this->paymentModel->addCondition($this->findRelatedField($this->paymentModel, $this->invoiceModel), $id);
 
-            $balance = 'Balance: '.$this->invoice->get('balance');
+                $refs = $this->paymentModel->getRefs();
 
-            // setup payment editing page.
-            $paymentEdit = $page->add(['VirtualPage', 'urlTrigger' => 'p-edit']);
-            $editCrumb = $paymentEdit->add(['BreadCrumb', null, 'big']);
-            $paymentEdit->add(['ui' =>'divider']);
+                $balance = 'Balance: '.$this->invoice->get('balance');
 
-            $paymentEdit->add(['Header', $balance]);
-            $editCrumb->addCrumb('Invoices', $this->invoice->getURL());
-            $editCrumb->addCrumb($this->invoiceModel->getTitle().' \'s payments', $this->invoice->paymentPage->getURL());
+                // setup payment editing page.
+                $paymentEdit = $page->add(['VirtualPage', 'urlTrigger' => 'p-edit']);
+                $editCrumb = $paymentEdit->add(['BreadCrumb', null, 'big']);
+                $paymentEdit->add(['ui' =>'divider']);
 
-            $pId = $page->stickyGet('pId');
-            if ($pId) {
-                $this->paymentModel->load($pId);
-                $editCrumb->addCrumb('Edit payment');
-            } else {
-                $editCrumb->addCrumb('New payment');
-            }
-            $editCrumb->popTitle();
+                $paymentEdit->add(['Header', $balance]);
+                $editCrumb->addCrumb('Invoices', $this->invoice->getURL());
+                $editCrumb->addCrumb($this->invoiceModel->getTitle().' \'s payments', $this->invoice->paymentPage->getURL());
 
-            $formPayment = $paymentEdit->add('Form');
-            $formPayment->setModel($this->paymentModel, $this->paymentEditFields);
-            $formPayment->onSubmit(function($f) {
-                foreach ($this->paymentRelations as $paiement => $relation) {
-                    $f->model[$paiement] = $this->invoiceModel[$relation];
+                $pId = $page->stickyGet('pId');
+                if ($pId) {
+                    $this->paymentModel->load($pId);
+                    $editCrumb->addCrumb('Edit payment');
+                } else {
+                    $editCrumb->addCrumb('New payment');
                 }
-                $f->model->save();
+                $editCrumb->popTitle();
 
-                return $this->app->jsRedirect($this->invoice->paymentPage->getURL());
+                $formPayment = $paymentEdit->add('Form');
+                $formPayment->setModel($this->paymentModel, $this->paymentEditFields);
+                $formPayment->onSubmit(function($f) {
+                    foreach ($this->paymentRelations as $paiement => $relation) {
+                        $f->model[$paiement] = $this->invoiceModel[$relation];
+                    }
+                    $f->model->save();
+
+                    return $this->app->jsRedirect($this->invoice->paymentPage->getURL());
+                });
+
+                // setup payment grid display
+                $crumb = $page->add(['BreadCrumb',null, 'big']);
+                $page->add(['ui' =>'divider']);
+
+                $crumb->addCrumb('Invoices', $this->invoice->getUrl());
+                $crumb->addCrumb($this->invoiceModel->getTitle().' \'s payments');
+                $crumb->popTitle();
+
+                $m = $page->add('Menu');
+                $m->addItem(['Add Payment', 'icon' => 'plus'])->link($paymentEdit->getURL());
+                $m->addItem(['Edit Invoice', 'icon' => 'edit'])->link($this->invoice->invoicePage->getURL());
+
+                $gl = $page->add(['GridLayout', ['columns'=>3, 'rows'=>1]]);
+                $seg = $gl->add(['View', 'ui' => 'basic segment'], 'r1c1');
+                $card = $seg->add(['Card', 'header' => false]);
+                $card->setModel($this->invoiceModel, $this->paymentDisplayFields);
+
+                $page->add(['ui' =>'hidden divider']);
+
+                // Add payment table.
+                $g = $page->add('Table');
+                $g->setModel($this->paymentModel);
+                $actions = $g->addColumn(null, 'Actions');
+                $actions->addAction(['icon' => 'edit'], $this->invoice->jsIIF($paymentEdit->getURL(), 'pId'));
+                $actions->addAction(['icon' => 'trash'], function ($js, $id) use ($g, $seg){
+                    $g->model->load($id)->delete();
+
+                    return [$js->closest('tr')->transition('fade left'), $seg->jsReload()];
+                }, $this->invoice->confirmMsg);
             });
-
-            // setup payment grid display
-            $crumb = $page->add(['BreadCrumb',null, 'big']);
-            $page->add(['ui' =>'divider']);
-
-            $crumb->addCrumb('Invoices', $this->invoice->getUrl());
-            $crumb->addCrumb($this->invoiceModel->getTitle().' \'s payments');
-            $crumb->popTitle();
-
-            $m = $page->add('Menu');
-            $m->addItem(['Add Payment', 'icon' => 'plus'])->link($paymentEdit->getURL());
-            $m->addItem(['Edit Invoice', 'icon' => 'edit'])->link($this->invoice->invoicePage->getURL());
-
-            $gl = $page->add(['GridLayout', ['columns'=>3, 'rows'=>1]]);
-            $seg = $gl->add(['View', 'ui' => 'basic segment'], 'r1c1');
-            $card = $seg->add(['Card', 'header' => false]);
-            $card->setModel($this->invoiceModel, $this->paymentDisplayFields);
-
-            $page->add(['ui' =>'hidden divider']);
-
-            // Add payment table.
-            $g = $page->add('Table');
-            $g->setModel($this->paymentModel);
-            $actions = $g->addColumn(null, 'Actions');
-            $actions->addAction(['icon' => 'edit'], $this->invoice->jsIIF($paymentEdit->getURL(), 'pId'));
-            $actions->addAction(['icon' => 'trash'], function ($js, $id) use ($g, $seg){
-                $g->model->load($id)->delete();
-
-                return [$js->closest('tr')->transition('fade left'), $seg->jsReload()];
-            }, $this->invoice->confirmMsg);
-        });
+        }
     }
 
     /**
