@@ -29,7 +29,8 @@ class Invoice extends View
 
     public $grid = null;
     public $ipp = 10;
-
+    public $jsAction = null;
+    
     private $modelId;
     private $page;
     private $sortBy;
