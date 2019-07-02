@@ -6,6 +6,7 @@ $app->add(new \atk4\invoice\InvoiceMgr([
    'invoiceModel' => new \atk4\invoice\Model\Invoice($db ),
    'itemRef' => 'Items',
    'itemLink' => 'invoice_id',
+   'clientRef' => 'client_id',
    'paymentModel' =>  new \atk4\invoice\Model\Payment($db),
    'tableFields' => ['reference', 'client', 'date', 'due_date', 'total', 'balance'],
    'headerFields' => ['reference', 'date', 'due_date', 'client_id', 'paid_total'],
