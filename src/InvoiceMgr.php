@@ -28,6 +28,8 @@ class InvoiceMgr extends View
 
     public $itemRef = null;
     public $itemLink = null;
+    
+    public $clientRef = null;
 
     public function init()
     {
@@ -112,7 +114,7 @@ class InvoiceMgr extends View
             $inv_info->add(['Header', 'Balance', 'size' => 3, 'subHeader' => $this->invoice->get('balance')])->addClass('aligned right');
 
             $bill_to = $container->add(['View', 'ui' => 'basic segment']);
-            $bill_to->add(['Header', 'Bill to: '.$this->invoiceModel->get('client'), 'size'=> 4]);
+            $bill_to->add(['Header', 'Bill to: '.$this->invoiceModel->ref($this->clientRef ?: 'client')->getTitle(), 'size'=> 4]);
             $table_view  = $container->add(['View']);
             $table = $table_view->add('Table')->setModel($invoice_items);
 
