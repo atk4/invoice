@@ -25,9 +25,6 @@ class Invoice extends View
     public $hasPayment = false;
     public $paymentPage = null;
 
-
-    public $jsAction = null;
-
     public $printPage = null;
 
     public $grid = null;
