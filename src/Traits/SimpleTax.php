@@ -21,7 +21,7 @@ trait SimpleTax
     public function jsUpdateFields($rows, $f)
     {
 
-        if (!$this->getElement('subtotal') || !$this->getElement('tax') || !$this->getElement('total')) {
+        if (!$this->getField('subtotal') || !$this->getField('tax') || !$this->getField('total')) {
             return;
         }
 
