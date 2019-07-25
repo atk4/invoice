@@ -110,7 +110,7 @@ class Invoice extends View
     public function get($field)
     {
         if ($this->app->ui_persistence) {
-            return $this->app->ui_persistence->typecastSaveField($this->model->getElement($field), $this->model->get($field));
+            return $this->app->ui_persistence->typecastSaveField($this->model->getField($field), $this->model->get($field));
         } else {
             return $this->model->get($field);
         }
