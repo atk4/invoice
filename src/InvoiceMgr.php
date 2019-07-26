@@ -180,7 +180,7 @@ class InvoiceMgr extends View
 
                 $gl = $page->add(['GridLayout', ['columns'=>3, 'rows'=>1]]);
                 $seg = $gl->add(['View', 'ui' => 'basic segment'], 'r1c1');
-                $card = $seg->add(['Card', 'header' => false]);
+                $card = $seg->add(['Card', 'header' => false, 'useLabel' => true]);
                 $card->setModel($this->invoiceModel, $this->paymentDisplayFields);
 
                 $page->add(['ui' =>'hidden divider']);
