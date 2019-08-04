@@ -29,7 +29,7 @@ class Invoice extends \atk4\data\Model
         $this->addField('date', ['type' => 'date', 'default' => new \DateTime(), 'required' => true, 'ui' => ['form' => ['width' => 'four']]]);
         $this->addField('due_date', ['type' => 'date', 'default' => (new \DateTime())->add(new \DateInterval('P'.$this->period.'D')),'ui' => ['form' => ['width' => 'four']]]);
 
-        $this->addField('tax_rate', ['type' => 'number', 'default' => 0.1]);
+        $this->addField('vat_rate', ['type' => 'number', 'default' => null]);
 
         $this->hasOne('client_id', new Client(), ['required' => true, 'ui' => ['form' => ['width' => 'three']]])->addField('client', 'name');
 
@@ -38,8 +38,9 @@ class Invoice extends \atk4\data\Model
         $this->hasMany('Items', new InvoiceItems())->addField('subtotal', ['aggregate'=>'sum', 'field'=>'amount', 'type' => 'money']);
 
         //todo move tax rate into expression
-        $this->addExpression('tax', ['expr' => "[subtotal] * [tax_rate]", 'type' => 'money']);
-        $this->addExpression('total', ['expr' => '[subtotal]+[tax]', 'type' => 'money']);
+        $this->addExpression('total_vat', ['expr' => "[subtotal] * [vat_rate]", 'type' => 'money']);
+        $this->addExpression('total_net', ['expr' => '[subtotal] * [rate]', 'type' => 'money']);
+        $this->addExpression('total_gross', ['expr' => '[total_net] + [total_vat]', 'type' => 'money']);
 
         $this->addExpression('balance', ['expr' => '[total] - [paid_total]', 'type' => 'money']);
     }
