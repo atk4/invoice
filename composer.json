@@ -4,5 +4,8 @@
   "license": "MIT",
   "autoload": {
     "psr-4": {"atk4\\invoice\\":"src/"}
+  },
+  "require": {
+    "atk4/ui": "^2.0"
   }
 }

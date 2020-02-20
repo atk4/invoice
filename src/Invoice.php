@@ -40,8 +40,6 @@ class Invoice extends View
     {
         parent::init();
 
-        $this->app->useSuiVue();
-
         if (!$this->grid) {
             $this->grid = new Grid(['paginator' => ['urlTrigger' => 'p'], 'sortTrigger' => 'sortBy']);
         }
@@ -81,16 +79,16 @@ class Invoice extends View
         $g->quickSearch->useAjax = false;
         $g->quickSearch->initValue = $this->search;
 
-        $g->addAction(['icon' => 'edit'], $this->jsIIF($this->invoicePage->getURL()));
+        $g->addActionButton(['icon' => 'edit'], $this->jsIIF($this->invoicePage->getURL()));
 
         if ($this->hasPayment) {
-            $g->addAction(['icon' => 'dollar sign'], $this->jsIIF($this->paymentPage->getURL()));
+            $g->addActionButton(['icon' => 'dollar sign'], $this->jsIIF($this->paymentPage->getURL()));
         }
 
-        $g->addAction(['icon' => 'print'], $this->jsIIF($this->printPage->getURL('popup')));
+        $g->addActionButton(['icon' => 'print'], $this->jsIIF($this->printPage->getURL('popup')));
 
 
-        $g->addAction(['icon' => 'trash'], function ($jschain, $id) {
+        $g->addActionButton(['icon' => 'trash'], function ($jschain, $id) {
             $this->model->load($id)->delete();
 
             return $jschain->closest('tr')->transition('fade left');

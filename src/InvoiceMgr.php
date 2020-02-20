@@ -188,9 +188,9 @@ class InvoiceMgr extends View
                 // Add payment table.
                 $g = $page->add('Table');
                 $g->setModel($this->paymentModel);
-                $actions = $g->addColumn(null, 'Actions');
-                $actions->addAction(['icon' => 'edit'], $this->invoice->jsIIF($paymentEdit->getURL(), 'pId'));
-                $actions->addAction(['icon' => 'trash'], function ($js, $id) use ($g, $seg){
+                $actions = $g->addColumn(null, 'ActionButtons');
+                $actions->addButton(['icon' => 'edit'], $this->invoice->jsIIF($paymentEdit->getURL(), 'pId'));
+                $actions->addButton(['icon' => 'trash'], function ($js, $id) use ($g, $seg){
                     $g->model->load($id)->delete();
 
                     return [$js->closest('tr')->transition('fade left'), $seg->jsReload()];
