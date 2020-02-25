@@ -19,9 +19,9 @@ basic actions of "Edit" and "Delete" you'll see buttons:
  
 Before statement is sent - you will see a preview.
 
-You can also client on any client to see list of invoices
-and payments (they will be in the separate tabs). Adding
-invoice is simple. Once added invoice will have action
+You can also click on any client to see list of his invoices
+and payments for these invoices. They will be in the separate tabs.
+Adding invoice is simple. Once added invoice will have action
 buttons:
  - Email invoice
  
