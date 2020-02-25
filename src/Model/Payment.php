@@ -21,7 +21,7 @@ class Payment extends Model
         $this->addField('amount', ['type' => 'money']);
         $this->addField('details');
 
-        $this->hasOne('invoice_id', new Invoice());
-        $this->hasOne('client_id', new Client(), ['ui' => ['is_visible' => false]]);
+        $this->hasOne('invoice_id', Invoice::class);
+        $this->hasOne('client_id', Client::class, ['ui' => ['is_visible' => false]]);
     }
 }
