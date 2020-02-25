@@ -20,7 +20,7 @@ class InvoiceItems extends Model
         $this->addField('rate', ['type' => 'money', 'caption' => 'Rate', 'required' => true, 'ui' => ['multiline' => ['width' => 2]]]);
         $this->addExpression('amount', ['expr' => '[qty] * [rate]', 'type' => 'money', 'caption' => 'Amount']);
 
-        $this->hasOne('invoice_id', new Invoice());
+        $this->hasOne('invoice_id', Invoice::class);
     }
 
 }
