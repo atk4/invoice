@@ -79,6 +79,7 @@ class Invoice extends View
         $g->quickSearch->useAjax = false;
         $g->quickSearch->initValue = $this->search;
 
+        /*
         $g->addActionButton(['icon' => 'edit'], $this->jsIIF($this->invoicePage->getURL()));
 
         if ($this->hasPayment) {
@@ -93,6 +94,7 @@ class Invoice extends View
 
             return $jschain->closest('tr')->transition('fade left');
         }, $this->confirmMsg);
+        */
     }
 
     /**

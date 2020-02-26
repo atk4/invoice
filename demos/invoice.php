@@ -1,13 +1,18 @@
 <?php
+namespace atk4\invoice;
 
-$db = $app->db;
+use atk4\invoice\Model\Client;
+
+$app = include 'setup.php';
+
+$app->add('CRUD')->setModel(new Client($app->db));
 
 $app->add(new \atk4\invoice\InvoiceMgr([
-   'invoiceModel' => new \atk4\invoice\Model\Invoice($db ),
+   'invoiceModel' => new \atk4\invoice\Model\Invoice($app->db ),
    'itemRef' => 'Items',
    'itemLink' => 'invoice_id',
    'clientRef' => 'client_id',
-   'paymentModel' =>  new \atk4\invoice\Model\Payment($db),
+   'paymentModel' =>  new \atk4\invoice\Model\Payment($app->db),
    'tableFields' => ['reference', 'client', 'date', 'due_date', 'total', 'balance'],
    'headerFields' => ['reference', 'date', 'due_date', 'client_id', 'paid_total'],
    'footerFields' => ['subtotal', 'tax', 'total'],

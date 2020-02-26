@@ -5,6 +5,8 @@
 
 namespace atk4\invoice\Model;
 
+use atk4\data\UserAction\Generic;
+use atk4\ui\ActionExecutor\UserAction;
 use atk4\ui\Exception;
 
 class Invoice extends \atk4\data\Model
@@ -44,6 +46,8 @@ class Invoice extends \atk4\data\Model
         $this->addExpression('total_gross', ['expr' => '[total_net] + [total_vat]', 'type' => 'money']);
 
         $this->addExpression('balance', ['expr' => '[total_gross] - [paid_total]', 'type' => 'money']);
+
+        $this->addAction('bleh', ['scope'=>Generic::NO_RECORDS]);
     }
 
 }
