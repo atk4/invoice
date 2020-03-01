@@ -1,8 +1,9 @@
 <?php
 namespace atk4\invoice;
+require_once __DIR__ . '/init.php';
+
 use atk4\ui\Button;
 
-$app = include 'setup.php';
 $app->add(['Header','Migration Console']);
 
 $app->add(['Button', 'Go to demo..', 'big primary'])->link(['invoice']);

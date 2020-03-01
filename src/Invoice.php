@@ -27,6 +27,7 @@ class Invoice extends View
 
     public $printPage = null;
 
+    /** @var Grid */
     public $grid = null;
     public $ipp = 10;
     public $jsAction = null;
@@ -41,6 +42,7 @@ class Invoice extends View
         parent::init();
 
         if (!$this->grid) {
+            //$this->grid = new \atk4\ui\CRUD(['paginator' => ['urlTrigger' => 'p'], 'sortTrigger' => 'sortBy']);
             $this->grid = new Grid(['paginator' => ['urlTrigger' => 'p'], 'sortTrigger' => 'sortBy']);
         }
 
@@ -75,26 +77,41 @@ class Invoice extends View
         $g->ipp = $this->ipp;
         $g->setModel($this->model, $this->tableFields);
         $g->menu->addItem(['Add Invoice', 'icon' => 'plus'])->link($this->invoicePage->getURL());
-        $g->addQuickSearch(['reference', 'date', 'due_date'], true);
+        $g->addQuickSearch(['ref_no', 'date', 'due_date'], true);
         $g->quickSearch->useAjax = false;
         $g->quickSearch->initValue = $this->search;
 
-        /*
-        $g->addActionButton(['icon' => 'edit'], $this->jsIIF($this->invoicePage->getURL()));
+        // edit action
+        $a = $this->model->hasAction('edit');
+        if ($a && $a->enabled) {
+            $g->addActionButton(['icon' => 'edit'], $this->jsIIF($this->invoicePage->getURL()));
+        }
 
+        // delete action
+        $a = $this->model->hasAction('delete');
+        if ($a && $a->enabled) {
+            $g->addActionButton(['icon' => 'red trash'], function ($jschain, $id) {
+                $this->model->load($id)->delete();
+
+                return $jschain->closest('tr')->transition('fade left');
+            }, $this->confirmMsg);
+        }
+
+        // other actions - all of this is bullshit. We should use CRUD instead where it's already implemented.
+        // only thing what's wrong with CRUD is that it will use default edit form, but we need it different.
+        foreach ($this->model->getActions() as $action_name => $action) {
+            if (!in_array($action_name, ['edit', 'delete']) && $action->enabled && $action->scope == \atk4\data\UserAction\Generic::SINGLE_RECORD) {
+                $g->addUserAction($action);
+            }
+        }
+        /*
         if ($this->hasPayment) {
             $g->addActionButton(['icon' => 'dollar sign'], $this->jsIIF($this->paymentPage->getURL()));
         }
 
         $g->addActionButton(['icon' => 'print'], $this->jsIIF($this->printPage->getURL('popup')));
-
-
-        $g->addActionButton(['icon' => 'trash'], function ($jschain, $id) {
-            $this->model->load($id)->delete();
-
-            return $jschain->closest('tr')->transition('fade left');
-        }, $this->confirmMsg);
         */
+
     }
 
     /**
@@ -208,7 +225,7 @@ class Invoice extends View
         }
 
         if ($query = http_build_query($params)){
-            $url  = $url.'?'.$query;
+            $url = $url.'?'.$query;
         };
 
         return $url;
