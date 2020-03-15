@@ -84,7 +84,7 @@ class InvoiceMgr extends View
             $ml = $itemLayout->addField('ml', ['MultiLine', 'options' => ['size' => 'small']]);
             $ml->setModel($m, $this->itemFields, $this->itemRef, $this->itemLink);
 
-            $ml->onLineChange([$this->invoiceModel, 'jsUpdateFields'], ['qty', 'rate']);
+            $ml->onLineChange([$this->invoiceModel, 'jsUpdateFields'], ['qty', 'price']);
 
 
             $columnsLayout = $form->layout->addSubLayout('Columns');

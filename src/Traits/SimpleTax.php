@@ -13,29 +13,31 @@ trait SimpleTax
     /**
      * Update field value in form via javascript when onChange event is fire on MultiLine.
      *
-     * @param $rows  The items rows with new value.
-     * @param $f     The form where multiline is set.
+     * @param array $rows  The items rows with new value.
+     * @param Form  $f     The form where multiline is set.
      *
      * @return array
      */
-    public function jsUpdateFields($rows, $f)
+    public function jsUpdateFields(array $rows, \atk4\ui\Form $f): ?array
     {
-
-        if (!$this->getField('subtotal') || !$this->getField('tax') || !$this->getField('total')) {
-            return;
+        if (!$this->getField('total_net') || !$this->getField('total_vat') || !$this->getField('total_gross')) {
+            return null;
         }
 
-        $s_total = $this->getSubTotal($rows);
-        $tax = $this->getTotalTax($s_total);
+        // calculate totals
+        $total_net = $this->getSubTotal($rows);
+        $total_vat = $this->getTotalTax($total_net);
+
+        // set total field values
         $resp = [];
-        if ($field = $f->getField('subtotal')){
-            $resp[] = $field->jsInput()->val(number_format($s_total, 2));
+        if ($field = $f->getField('total_net')){
+            $resp[] = $field->jsInput()->val(number_format($total_net, 2));
         }
-        if ($field =  $f->getField('tax')) {
-            $resp[] = $field->jsInput()->val(number_format($tax, 2));
+        if ($field =  $f->getField('total_vat')) {
+            $resp[] = $field->jsInput()->val(number_format($total_vat, 2));
         }
-        if ($field = $f->getField('total')) {
-            $resp[] = $field->jsInput()->val(number_format($s_total + $tax, 2));
+        if ($field = $f->getField('total_gross')) {
+            $resp[] = $field->jsInput()->val(number_format($total_net + $total_vat, 2));
         }
 
         return $resp;
@@ -44,17 +46,17 @@ trait SimpleTax
     /**
      * Return total of each item in a row.
      *
-     * @param $itemRows
+     * @param array $itemRows
      *
-     * @return float|int
+     * @return float
      */
-    protected function getSubTotal($itemRows)
+    protected function getSubTotal(array $itemRows): float
     {
         $s_total = 0;
         foreach ($itemRows as $row => $cols) {
+            $price = array_column($cols, 'price')[0];
             $qty = array_column($cols, 'qty')[0];
-            $rate = array_column($cols, 'rate')[0];
-            $s_total = $s_total + ($qty * $rate);
+            $s_total = $s_total + ($qty * $price);
         }
         $this->total = $s_total;
 
@@ -66,10 +68,10 @@ trait SimpleTax
      *
      * @param $total
      *
-     * @return float|int
+     * @return float
      */
-    protected function getTotalTax($total)
+    protected function getTotalTax(float $total): float
     {
-        return $total * $this->get('tax_rate');
+        return round($total * $this->get('vat_rate') / 100, 2);
     }
 }

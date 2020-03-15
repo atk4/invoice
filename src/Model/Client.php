@@ -1,20 +1,30 @@
 <?php
 /**
- * Client table
+ * Client model
  */
-
 namespace atk4\invoice\Model;
 
 use atk4\data\Model;
+use atk4\invoice\Traits\SendStatementAction;
 
 class Client extends Model
 {
+    use SendStatementAction;
+
     public $table = 'client';
+    public $caption = 'Client';
 
     public function init()
     {
         parent::init();
 
-        $this->addField('name');
+        $this->addField('name', ['required' => true]);
+        $this->addField('email');
+
+        $this->hasMany('Invoices', Invoice::class);
+        $this->hasMany('Payments', Payment::class);
+
+        // actions
+        $this->initSendStatementAction();
     }
 }
