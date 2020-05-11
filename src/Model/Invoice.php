@@ -5,6 +5,7 @@
 namespace atk4\invoice\Model;
 
 use atk4\data\Model;
+use atk4\data\UserAction\Generic;
 use atk4\ui\ActionExecutor\UserAction;
 use atk4\ui\Exception;
 use atk4\invoice\Traits\SimpleTax;
@@ -26,7 +27,7 @@ class Invoice extends Model
     {
         parent::init();
 
-        $this->hasOne('client_id', Client::class, ['required' => true, 'ui' => ['form' => ['width' => 'three']]])
+        $this->hasOne('client_id', [Client::class, 'required' => true, 'caption' => 'Client', 'ui' => ['form' => ['width' => 'three']]])
             ->withTitle();
 
         $this->addField('ref_no', ['required' => true, 'ui' => ['form' => ['width' => 'six']]]);

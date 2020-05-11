@@ -14,6 +14,7 @@ use atk4\ui\jsExpression;
 use atk4\ui\jsToast;
 use atk4\ui\View;
 use atk4\ui\VirtualPage;
+use atk4\ui\ActionExecutor;
 
 class Invoice extends View
 {
@@ -48,9 +49,9 @@ class Invoice extends View
         }
 
         $this->modelId = $this->stickyGet('id');
-        $this->page    = $this->stickyGet('p');
-        $this->sortBy  = $this->stickyGet('sortBy');
-        $this->search  = $this->stickyGet('_q');
+        $this->page    = $this->app ? $this->app->stickyGet('p') : $this->stickyGet('p');
+        $this->sortBy  = $this->app ? $this->app->stickyGet('sortBy') : $this->stickyGet('sortBy');
+        $this->search  = $this->app ? $this->app->stickyGet('_q') : $this->stickyGet('_q');;
 
         if (!$this->jsAction) {
             $this->jsAction = new jsToast('Saved!');
@@ -98,11 +99,20 @@ class Invoice extends View
             }, $this->confirmMsg);
         }
 
-        // other actions - all of this is bullshit. We should use CRUD instead where it's already implemented.
-        // only thing what's wrong with CRUD is that it will use default edit form, but we need it different.
+        // setup other actions
         foreach ($this->model->getActions() as $action_name => $action) {
             if (!in_array($action_name, ['edit', 'delete']) && $action->enabled && $action->scope == UserAction\Generic::SINGLE_RECORD) {
-                $g->addUserAction($action);
+                // have single record action to reload grid after execution.
+                $ex = new ActionExecutor\UserAction();
+                $ex->onHook('afterExecute', function($ex, $return) use ($g) {
+                   return [
+                       new jsToast($return),
+                       $g->container->jsReload()
+                   ];
+                });
+                $action->ui['executor'] = $ex;
+
+                $g->addActionMenuItem($action);
             }
         }
         /*

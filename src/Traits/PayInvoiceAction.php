@@ -19,11 +19,16 @@ trait PayInvoiceAction
     public function initPayInvoiceAction()
     {
         $this->addAction('pay_invoice', [
+            'caption' => 'Pay Full Invoice Amount',
+            'description' => 'Pay',
+            'enabled' => function() {
+              return $this->get('balance') > 0;
+            },
             'scope' => Generic::SINGLE_RECORD,
             'args' => [
-                'method' => $this->refModel('Payments')->getField('method'), // use actual model field settings :)
+                // todo $this->refModel('Payments')->getField('method') is not working.
+                'method' => ['required' => true, 'default' => 'cash', 'enum' => ['cash', 'debit', 'credit']],
             ],
-            'confirmation' => 'Do you really want to fully pay this invoice?',
         ]);
     }
 
@@ -34,11 +39,7 @@ trait PayInvoiceAction
      */
     public function pay_invoice($method)
     {
-        if (!$this['balance'] || $this['balance'] < 0 ) {
-            return 'Invoice '.$this->getTitle().' is already fully paid.';
-        }
-
-        $m = $this->ref('Payments')->save([
+        $this->ref('Payments')->save([
             'method' => $method,
             'paid_on' => new \DateTime(),
             'amount' => $this['balance'],
