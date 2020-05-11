@@ -11,7 +11,7 @@ class InvoiceItems extends Model
     public $table = 'invoice_line';
     public $caption = 'Invoice Line';
 
-    public function init()
+    public function init(): void
     {
         parent::init();
 

@@ -12,7 +12,7 @@ class Payment extends Model
     public $caption = 'Payment';
     public $title_field = 'method';
 
-    public function init()
+    public function init(): void
     {
         parent::init();
 
@@ -24,6 +24,6 @@ class Payment extends Model
         $this->setOrder('paid_on');
 
         $this->hasOne('invoice_id', Invoice::class);
-        $this->hasOne('client_id', Client::class, ['ui' => ['is_visible' => false]]);
+        $this->hasOne('client_id', Client::class, ['ui' => ['visible' => false]]);
     }
 }

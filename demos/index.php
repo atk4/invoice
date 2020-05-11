@@ -2,12 +2,14 @@
 namespace atk4\invoice;
 require_once __DIR__ . '/init.php';
 
+use atk4\schema\MigratorConsole;
 use atk4\ui\Button;
+use atk4\ui\Header;
 
-$app->add(['Header','Migration Console']);
+Header::addTo($app, ['Migration Console']);
 
-$app->add(['Button', 'Go to demo..', 'big primary'])->link(['invoice']);
-$app->add(\atk4\schema\MigratorConsole::class)
+Button::addTo($app, ['Go to demo..', 'big primary'])->link(['invoice']);
+$app->add(MigratorConsole::class)
     ->migrateModels([
         new Model\Client($app->db),
         new Model\Invoice($app->db),

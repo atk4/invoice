@@ -1,5 +1,5 @@
 <?php
-if(file_exists(__DIR__ . '/config-local.php')) {
+if (file_exists(__DIR__ . '/config-local.php')) {
     include(__DIR__ . '/config-local.php');
     return;
 }

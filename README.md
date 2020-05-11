@@ -7,7 +7,7 @@ for your applications. Here is how to use:
 2. create page in your admin interface:
 
 ```php
-$app->add(new MasterCrud())->setModel(
+MasterCrud::addTo($app)->setModel(
   new Model\Client(),
   ['Invoices'=>['Payments']]
 );

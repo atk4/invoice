@@ -2,14 +2,23 @@
 /**
  * Manage invoice pages.
  */
-
 namespace atk4\invoice;
 
 use atk4\data\Model;
 use atk4\invoice\Model\Client;
 use atk4\invoice\Model\Payment;
+use atk4\ui\BreadCrumb;
+use atk4\ui\Button;
+use atk4\ui\Card;
 use atk4\ui\Exception;
+use atk4\ui\GridLayout;
+use atk4\ui\Header;
+use atk4\ui\Form;
+use atk4\ui\Menu;
+use atk4\ui\jsToast;
+use atk4\ui\Table;
 use atk4\ui\View;
+use atk4\ui\VirtualPage;
 
 class InvoiceMgr extends View
 {
@@ -31,7 +40,7 @@ class InvoiceMgr extends View
     
     public $clientRef = null;
 
-    public function init()
+    public function init(): void
     {
         parent::init();
 
@@ -49,18 +58,18 @@ class InvoiceMgr extends View
         // set page for editing invoice.
         $this->invoice->setInvoicePage(function($page, $id) {
 
-            $crumb = $page->add(['BreadCrumb',null, 'big']);
+            $crumb = BreadCrumb::addTo($page, [null, 'big']);
 
-            $page->add(['ui' =>'divider']);
+            View::addTo($page, ['ui' =>'divider']);
 
             $crumb->addCrumb('Invoices', $this->invoice->getURL());
 
-            $m = $page->add('Menu');
+            $m = Menu::addTo($page);
             if ($this->paymentModel) {
                 $m->addItem(['Payments', 'icon' => 'dollar sign'])->link($this->invoice->paymentPage->getURL());
             }
 
-            $form = $page->add(['Form', 'canLeave' => false]);
+            $form = Form::addTo($page, ['canLeave' => false]);
 
             if ($id) {
                 $this->invoiceModel->load($id);
@@ -70,7 +79,7 @@ class InvoiceMgr extends View
             }
             $crumb->popTitle();
 
-            $form->add(['Button', 'Back'])->link($this->invoice->url());
+            Button::addTo($form,['Back'])->link($this->invoice->url());
 
             $m = $form->setModel($this->invoiceModel, false);
 
@@ -79,7 +88,7 @@ class InvoiceMgr extends View
             $headerGroup->setModel($m, $this->headerFields);
 
             $itemLayout = $form->layout->addSubLayout('Generic');
-            $itemLayout->add(['Header', 'Invoice Items', 'size' => 4]);
+            Header::addTo($itemLayout, ['Invoice Items', 'size' => 4]);
 
             $ml = $itemLayout->addField('ml', ['MultiLine', 'options' => ['size' => 'small']]);
             $ml->setModel($m, $this->itemFields, $this->itemRef, $this->itemLink);
@@ -96,33 +105,33 @@ class InvoiceMgr extends View
                 $f->model->save();
                 $ml->saveRows();
 
-                return new \atk4\ui\jsToast('Saved!');
+                return new jsToast('Saved!');
             });
         });
 
         $this->invoice->setPrintPage(function($page, $id) {
             $invoice_items = $this->invoiceModel->load($id)->ref($this->itemRef);
-            $container = $page->add('View')->setStyle(['width' => '900px', 'margin-top' => '20px']);
-            $gl_top = $container->add(['GridLayout', ['rows' => 5, 'columns' => 2]])->setStyle(['width' => '900px', 'margin-top' => '20px']);
+            $container = View::addTo($page)->setStyle(['width' => '900px', 'margin-top' => '20px']);
+            $gl_top = GridLayout::addTo($container, [['rows' => 5, 'columns' => 2]])->setStyle(['width' => '900px', 'margin-top' => '20px']);
 
             $comp_view = $gl_top->add(['View', 'defaultTemplate' => $this->invoice->getDir('template').'/company.html'], 'r1c1');
             $comp_view->template->set('name', 'My Company');
             $comp_view->template->set('image', $this->invoice->getDir('public').'/images/logo.png');
 
             $inv_info = $gl_top->add('View', 'r1c2');
-            $inv_info->add(['Header', 'Invoice', 'subHeader' => '#'.$this->invoiceModel->getTitle()])->addClass('aligned right');
-            $inv_info->add(['Header', 'Balance', 'size' => 3, 'subHeader' => $this->invoice->get('balance')])->addClass('aligned right');
+            Header::addTo($inv_info, ['Invoice', 'subHeader' => '#'.$this->invoiceModel->getTitle()])->addClass('aligned right');
+            Header::addTo($inv_info, ['Balance', 'size' => 3, 'subHeader' => $this->invoice->get('balance')])->addClass('aligned right');
 
-            $bill_to = $container->add(['View', 'ui' => 'basic segment']);
-            $bill_to->add(['Header', 'Bill to: '.$this->invoiceModel->ref($this->clientRef ?: 'client')->getTitle(), 'size'=> 4]);
-            $table_view  = $container->add(['View']);
-            $table = $table_view->add('Table')->setModel($invoice_items);
+            $bill_to = View::addTo($container, ['ui' => 'basic segment']);
+            Header::addTo($bill_to, ['Bill to: '.$this->invoiceModel->ref($this->clientRef ?: 'client')->getTitle(), 'size'=> 4]);
+            $table_view  = View::addTo($container);
+            $table = Table::addTo($table_view)->setModel($invoice_items);
 
-            $container->add(['ui' => 'hidden divider']);
+            View::addTo($container, ['ui' => 'hidden divider']);
 
-            $gl_bottom = $container->add(['GridLayout', ['rows' => 1, 'columns' => 4]]);
+            $gl_bottom = GridLayout::addTo($container, [['rows' => 1, 'columns' => 4]]);
             $card_container = $gl_bottom->add(['View', 'ui' => 'aligned right'], 'r1c4');
-            $card = $card_container->add(['Card', 'header' => false]);
+            $card = Card::addTo($card_container, ['header' => false]);
             $card->setModel($this->invoiceModel, $this->footerFields);
         });
 
@@ -138,11 +147,11 @@ class InvoiceMgr extends View
                 $balance = 'Balance: '.$this->invoice->get('balance');
 
                 // setup payment editing page.
-                $paymentEdit = $page->add(['VirtualPage', 'urlTrigger' => 'p-edit']);
-                $editCrumb = $paymentEdit->add(['BreadCrumb', null, 'big']);
-                $paymentEdit->add(['ui' =>'divider']);
+                $paymentEdit = VirtualPage::addTo($page, ['urlTrigger' => 'p-edit']);
+                $editCrumb = BreadCrumb::addTo($paymentEdit, [null, 'big']);
+                View::addTo($paymentEdit, ['ui' =>'divider']);
 
-                $paymentEdit->add(['Header', $balance]);
+                Header::addTo($paymentEdit, [$balance]);
                 $editCrumb->addCrumb('Invoices', $this->invoice->getURL());
                 $editCrumb->addCrumb($this->invoiceModel->getTitle().' \'s payments', $this->invoice->paymentPage->getURL());
 
@@ -155,7 +164,7 @@ class InvoiceMgr extends View
                 }
                 $editCrumb->popTitle();
 
-                $formPayment = $paymentEdit->add('Form');
+                $formPayment = Form::addTo($paymentEdit);
                 $formPayment->setModel($this->paymentModel, $this->paymentEditFields);
                 $formPayment->onSubmit(function($f) {
                     foreach ($this->paymentRelations as $paiement => $relation) {
@@ -167,26 +176,26 @@ class InvoiceMgr extends View
                 });
 
                 // setup payment grid display
-                $crumb = $page->add(['BreadCrumb',null, 'big']);
-                $page->add(['ui' =>'divider']);
+                $crumb = BreadCrumb::addTo($page, [null, 'big']);
+                View::addTo($page, ['ui' => 'divider']);
 
                 $crumb->addCrumb('Invoices', $this->invoice->getUrl());
                 $crumb->addCrumb($this->invoiceModel->getTitle().' \'s payments');
                 $crumb->popTitle();
 
-                $m = $page->add('Menu');
+                $m = Menu::addTo($page);
                 $m->addItem(['Add Payment', 'icon' => 'plus'])->link($paymentEdit->getURL());
                 $m->addItem(['Edit Invoice', 'icon' => 'edit'])->link($this->invoice->invoicePage->getURL());
 
-                $gl = $page->add(['GridLayout', ['columns'=>3, 'rows'=>1]]);
+                $gl = GridLayout::addTo($page, [['columns'=>3, 'rows'=>1]]);
                 $seg = $gl->add(['View', 'ui' => 'basic segment'], 'r1c1');
-                $card = $seg->add(['Card', 'header' => false, 'useLabel' => true]);
+                $card = Card::addTo($seg, ['header' => false, 'useLabel' => true]);
                 $card->setModel($this->invoiceModel, $this->paymentDisplayFields);
 
-                $page->add(['ui' =>'hidden divider']);
+                View::addTo($page, ['ui' => 'hidden divider']);
 
                 // Add payment table.
-                $g = $page->add('Table');
+                $g = Table::addTo($page);
                 $g->setModel($this->paymentModel);
                 $actions = $g->addColumn(null, 'ActionButtons');
                 $actions->addButton(['icon' => 'edit'], $this->invoice->jsIIF($paymentEdit->getURL(), 'pId'));
@@ -213,8 +222,8 @@ class InvoiceMgr extends View
     {
         $link = null;
         $refs = $model->getRefs();
-        forEach($refs as $ref) {
-            if ($ref->model->table === $related->table) {
+        foreach ($refs as $ref) {
+            if ($ref->getModel()->table === $related->table) {
                 $link = $ref->link;
                 break;
             }

@@ -5,11 +5,12 @@ require_once __DIR__ . '/init.php';
 use atk4\invoice\Model\Client;
 use atk4\invoice\Model\Invoice;
 use atk4\invoice\Model\Payment;
+use atk4\ui\CRUD;
 
-$app->add('CRUD')->setModel(new Client($app->db));
+CRUD::addTo($app)->setModel(new Client($app->db));
 
 $app->add(new InvoiceMgr([
-   'invoiceModel' => new Invoice($app->db ),
+   'invoiceModel' => new Invoice($app->db),
    'itemRef' => 'Items',
    'itemLink' => 'invoice_id',
    'clientRef' => 'client_id',

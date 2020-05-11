@@ -8,6 +8,9 @@
 namespace atk4\invoice\Traits;
 
 use atk4\data\UserAction\Generic;
+use atk4\ui\CardTable;
+use atk4\ui\Table;
+use atk4\ui\View;
 
 trait SendStatementAction
 {
@@ -34,16 +37,16 @@ trait SendStatementAction
      * @return string
      */
     public function get_statement_preview() {
-        $v = new \atk4\ui\View();
+        $v = new View();
 
         // header
-        $ct = $v->add(new \atk4\ui\CardTable());
+        $ct = CardTable::addTo($v);
         $ct->header = false;
         $ct->init();
         $ct->setModel($this, ['name', 'email']);
 
         // invoice table
-        $t = $v->add(new \atk4\ui\Table());
+        $t = Table::addTo($v);
         $t->init();
         $t->setModel($this->ref('Invoices'), ['date','ref_no','vat_rate','total_net','total_vat','total_gross','total_paid','balance']);
         $t->addTotals([

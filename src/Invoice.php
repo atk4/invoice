@@ -6,16 +6,17 @@
 
 namespace atk4\invoice;
 
+use atk4\data\UserAction;
 use atk4\ui\Exception;
 use atk4\ui\Grid;
 use atk4\ui\jQuery;
 use atk4\ui\jsExpression;
 use atk4\ui\jsToast;
 use atk4\ui\View;
+use atk4\ui\VirtualPage;
 
 class Invoice extends View
 {
-
     public $invoicePage = null;
 
     public $confirmMsg = 'Are you sure?';
@@ -37,7 +38,7 @@ class Invoice extends View
     private $sortBy;
     private $search;
 
-    public function init()
+    public function init(): void
     {
         parent::init();
 
@@ -55,13 +56,13 @@ class Invoice extends View
             $this->jsAction = new jsToast('Saved!');
         }
 
-        $this->invoicePage = $this->add(['VirtualPage', 'urlTrigger' => 'invoice']);
+        $this->invoicePage = VirtualPage::addTo($this, ['urlTrigger' => 'invoice']);
 
         if ($this->hasPayment) {
-            $this->paymentPage = $this->add(['VirtualPage', 'urlTrigger' => 'payment']);
+            $this->paymentPage = VirtualPage::addTo($this, ['urlTrigger' => 'payment']);
         }
 
-        $this->printPage = $this->add(['VirtualPage', 'urlTrigger' => 'print']);
+        $this->printPage = VirtualPage::addTo($this, ['urlTrigger' => 'print']);
 
         $this->displayInvoices();
     }
@@ -100,7 +101,7 @@ class Invoice extends View
         // other actions - all of this is bullshit. We should use CRUD instead where it's already implemented.
         // only thing what's wrong with CRUD is that it will use default edit form, but we need it different.
         foreach ($this->model->getActions() as $action_name => $action) {
-            if (!in_array($action_name, ['edit', 'delete']) && $action->enabled && $action->scope == \atk4\data\UserAction\Generic::SINGLE_RECORD) {
+            if (!in_array($action_name, ['edit', 'delete']) && $action->enabled && $action->scope == UserAction\Generic::SINGLE_RECORD) {
                 $g->addUserAction($action);
             }
         }

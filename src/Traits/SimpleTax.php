@@ -8,6 +8,8 @@
  */
 namespace atk4\invoice\Traits;
 
+use atk4\ui\Form;
+
 trait SimpleTax
 {
     /**
@@ -18,7 +20,7 @@ trait SimpleTax
      *
      * @return array
      */
-    public function jsUpdateFields(array $rows, \atk4\ui\Form $f): ?array
+    public function jsUpdateFields(array $rows, Form $f): ?array
     {
         if (!$this->getField('total_net') || !$this->getField('total_vat') || !$this->getField('total_gross')) {
             return null;
