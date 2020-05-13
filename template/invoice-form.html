@@ -1,0 +1,32 @@
+{InputField}
+<div class="{$field_class} field">
+  <label for="{$label_for}">{$label}</label>{$Input}
+  {$Hint}
+</div>{/}
+{InputNoLabel}
+<div class="{$field_class} field no-label">{$Input}{$Hint}</div>{/}
+<div class="ui divider"></div>
+<div class="ui compact grid">
+  <div class="row">
+    <div class="two wide column">{$ref_no}</div>
+    <div class="four wide column">{$client_id}</div>
+    <div class="four wide column">{$date}</div>
+    <div class="four wide column">{$due_date}</div>
+    <div class="two wide column">{$vat_rate}</div>
+  </div>
+</div>
+<div class="ui compact grid">
+  <div class="row">
+    <div class="column">{$ml}</div>
+  </div>
+</div>
+<div class="ui compact four column grid">
+  <div class="row">
+    <div class="column"></div>
+    <div class="column">{$total_net}</div>
+    <div class="column">{$total_vat}</div>
+    <div class="column">{$total_gross}</div>
+  </div>
+</div>
+<div class="ui divider"></div>{$Buttons}
+{$Content}

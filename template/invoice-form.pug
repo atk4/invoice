@@ -1,0 +1,41 @@
+| {InputField}
+div(class="{$field_class} field")
+    label(for="{$label_for}") {$label}
+    | {$Input}
+    | {$Hint}
+| {/}
+
+| {InputNoLabel}
+div(class="{$field_class} field no-label")
+    | {$Input}{$Hint}
+| {/}
+.ui.divider
+.ui.compact.grid
+    .row
+        .two.wide.column
+            | {$ref_no}
+        .four.wide.column
+            | {$client_id}
+        .four.wide.column
+            | {$date}
+        .four.wide.column
+            | {$due_date}
+        .two.wide.column
+            | {$vat_rate}
+.ui.compact.grid
+    .row
+        .column
+            | {$ml}
+.ui.compact.four.column.grid
+    .row
+        .column
+        .column
+            | {$total_net}
+        .column
+            | {$total_vat}
+        .column
+            | {$total_gross}
+.ui.divider
+| {$Buttons}
+| {$Content}
+
