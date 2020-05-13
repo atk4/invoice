@@ -230,11 +230,7 @@ class InvoiceMgr extends View
         }
         return $link;
     }
-
-    public function getDeleteAction()
-    {
-        return $this->invoice->getDeleteAction();
-    }
+    
     /**
      * Properly wired delete action when in Invoice page.
      *
