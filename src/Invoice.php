@@ -67,9 +67,9 @@ class Invoice extends View
         }
 
         $this->invoiceId = $this->app->stickyGet('id');
-        $this->page      = $this->app->stickyGet('p');
-        $this->sortBy  = $this->app->stickyGet('sortBy');
-        $this->search  = $this->app->stickyGet('_q');;
+        $this->page = $this->app->stickyGet('p');
+        $this->sortBy = $this->app->stickyGet('sortBy');
+        $this->search = $this->app->stickyGet('_q');;
 
         if (!$this->jsAction) {
             $this->jsAction = new jsToast('Saved!');
@@ -123,14 +123,11 @@ class Invoice extends View
             }
         }
 
-
-
         if ($this->hasPayment) {
             $g->addActionMenuItem('View Payments', $this->jsIIF($this->getURL($this->paymentPage->urlTrigger)));
         }
 
         $g->addActionMenuItem('Print Invoice', $this->jsIIF($this->printPage->getURL('popup')));
-
     }
 
     /**
