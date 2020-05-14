@@ -22,23 +22,51 @@ use atk4\ui\VirtualPage;
 
 class InvoiceMgr extends View
 {
-    public $invoice = null;
+    /** @var View A view for listing the invoices. */
+    public $invoice;
 
-    public $invoiceModel = null;
-    public $tableFields = null;
-    public $headerFields = [];
-    public $footerFields = [];
-    public $itemFields =  null;
+    /** @var Model Invoice model  */
+    public $invoiceModel;
 
-    public $paymentModel = null;
-    public $paymentRelations = null;
-    public $paymentEditFields = null;
+    /** @var string The qualifier name for hasMany relation between the Invoice and InvoiceItems model that was set in Invoice model*/
+    public $itemRef;
+
+    /** @var string The qualifier name for hasOne relation between the InvoiceItems and Invoice model that was set in InvoiceItems model. */
+    public $itemLink;
+
+    /** @var string The qualifier name for hasOne relation between the Invoice and Client model that was set in Invoice model. */
+    public $clientRef;
+
+    /** @var array A list of field, from invoiceModel, to display in Invoices table. */
+    public $tableFields;
+
+    /** @var array A list of field from InvoiceItems model to use in MultiLine Input Field. */
+    public $itemFields;
+
+    /** @var Model The Model for payment. */
+    public $paymentModel;
+
+    /**
+     * When payment is save, related field will be saved using this array content in regards
+     * to the invoice model.
+     *  ex when using: ['client_id' => 'client_id']
+     *      This will save field payment.client_id using invoice.client_id.
+     *
+     * @var  array A list of array representing models relation using fields between Payment and Invoice model.
+     */
+    public $paymentRelations;
+
+    /** @var array A list of field to display for adding/editing Payment model. */
+    public $paymentEditFields;
+
+    /** @var array A list of field from Invoice Model to be display in Payment page. */
     public $paymentDisplayFields = null;
 
-    public $itemRef = null;
-    public $itemLink = null;
-    
-    public $clientRef = null;
+
+    /** @var array @deprecated Use custom form instead. */
+    public $headerFields = [];
+    /** @var array @deprecated use custom form instead. */
+    public $footerFields = [];
 
     public function init(): void
     {
@@ -230,7 +258,7 @@ class InvoiceMgr extends View
         }
         return $link;
     }
-    
+
     /**
      * Properly wired delete action when in Invoice page.
      *
