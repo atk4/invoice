@@ -1,7 +1,5 @@
 <?php
-/**
- * Manage invoice pages.
- */
+
 namespace atk4\invoice;
 
 use atk4\data\Model;
@@ -20,6 +18,14 @@ use atk4\ui\Table;
 use atk4\ui\View;
 use atk4\ui\VirtualPage;
 
+/**
+ * Manage invoice pages.
+ * Act as a controller for VirtualPages created in invoice View.
+ *
+ * This is where content for virtual pages, like editing invoice, payments or display print page, are added.
+ * Virtual page are created in $invoice View instance but are set using this View.
+ *
+ */
 class InvoiceMgr extends View
 {
     /** @var View A view for listing the invoices. */
@@ -76,6 +82,7 @@ class InvoiceMgr extends View
             throw new Exception('Invoice model not set.');
         }
 
+        // creating the default Invoice view.
         $this->invoice = $this->add(new Invoice([
                                 'model'          => $this->invoiceModel,
                                 'tableFields'    => $this->tableFields,

@@ -1,8 +1,4 @@
 <?php
-/**
- * Invoice
- *
- */
 
 namespace atk4\invoice;
 
@@ -18,30 +14,48 @@ use atk4\ui\View;
 use atk4\ui\VirtualPage;
 use atk4\ui\ActionExecutor;
 
+/**
+ * Default view for displaying invoice listing.
+ *
+ */
 class Invoice extends View
 {
-    public $invoicePage = null;
+    /** @var VirtualPage for editing Invoice and InvoiceItems */
+    public $invoicePage;
 
-    public $confirmMsg = 'Are you sure?';
+    /** @var VirtuaPage for printing Invoice. */
+    public $printPage;
 
-    public $tableFields = null;
+    /** @var VirtualPage for displaying and editing Payments  */
+    public $paymentPage;
 
+    /** @var bool Whether or not Payment page is to be create. */
     public $hasPayment = false;
-    public $paymentPage = null;
 
-    public $printPage = null;
+    /** @var array  A list of Invoice fields to display in table. */
+    public $tableFields;
+
+    /** @var string Default delete msg. */
+    public $confirmMsg = 'Are you sure?';
 
     /** @var integer|null Current Invoice id */
     public $currentId = null;
 
-    /** @var Grid */
+    /** @var Grid default seed*/
     public $grid = null;
     public $ipp = 10;
     public $jsAction = null;
-    
-    private $modelId;
+
+    /** @var string The current invoice id. Will be set as 'id' in Get params. */
+    private $invoiceId;
+
+    /** @var string The current Grid page. Will be set as 'p' in Get params. */
     private $page;
+
+    /** @var string The current sorting field. Will be set as 'sortBy' in Get params. */
     private $sortBy;
+
+    /** @var string The current search value for Grid. Will be set as '_q' in Get params. */
     private $search;
 
     public function init(): void
@@ -52,8 +66,8 @@ class Invoice extends View
             $this->grid = new Grid(['paginator' => ['urlTrigger' => 'p'], 'sortTrigger' => 'sortBy']);
         }
 
-        $this->modelId = $this->app->stickyGet('id');
-        $this->page    = $this->app->stickyGet('p');
+        $this->invoiceId = $this->app->stickyGet('id');
+        $this->page      = $this->app->stickyGet('p');
         $this->sortBy  = $this->app->stickyGet('sortBy');
         $this->search  = $this->app->stickyGet('_q');;
 
@@ -149,7 +163,7 @@ class Invoice extends View
             return;
         }
 
-        call_user_func_array($fx, [$this->printPage, $this->modelId]);
+        call_user_func_array($fx, [$this->printPage, $this->invoiceId]);
     }
 
     public function getDir($dirName)
@@ -167,7 +181,7 @@ class Invoice extends View
         if (!($this->getPage() === 'invoice')) {
             return;
         }
-        call_user_func_array($fx, [$this->invoicePage, $this->modelId]);
+        call_user_func_array($fx, [$this->invoicePage, $this->invoiceId]);
     }
 
     /**
@@ -181,7 +195,7 @@ class Invoice extends View
             return;
         }
 
-        call_user_func_array($fx, [$this->paymentPage, $this->modelId]);
+        call_user_func_array($fx, [$this->paymentPage, $this->invoiceId]);
     }
 
     /**
@@ -233,8 +247,8 @@ class Invoice extends View
                 $params['_q'] = $this->search;
             }
 
-            if ($this->modelId) {
-                $params['id'] = $this->modelId;
+            if ($this->invoiceId) {
+                $params['id'] = $this->invoiceId;
             }
 
             if ($this->page) {
