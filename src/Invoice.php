@@ -4,6 +4,7 @@ namespace atk4\invoice;
 
 use atk4\data\UserAction;
 use atk4\ui\ActionExecutor\UserConfirmation;
+use atk4\ui\CRUD;
 use atk4\ui\Exception;
 use atk4\ui\Grid;
 use atk4\ui\jQuery;
@@ -63,7 +64,11 @@ class Invoice extends View
         parent::init();
 
         if (!$this->grid) {
-            $this->grid = new Grid(['paginator' => ['urlTrigger' => 'p'], 'sortTrigger' => 'sortBy']);
+            $this->grid = new CRUD([
+                'paginator' => ['urlTrigger' => 'p'],
+                'sortTrigger' => 'sortBy',
+                'useMenuActions' => true,
+            ]);
         }
 
         $this->invoiceId = $this->app->stickyGet('id');
@@ -93,10 +98,12 @@ class Invoice extends View
      */
     public function displayInvoices()
     {
+        $this->setAddAction();
+        $this->setDeleteAction();
+
         $g = $this->add($this->grid);
         $g->ipp = $this->ipp;
         $g->setModel($this->model, $this->tableFields);
-        $g->menu->addItem(['Add Invoice', 'icon' => 'plus'], $this->getAddInvoiceAction());
         $g->addQuickSearch(['ref_no', 'date', 'due_date'], true);
         $g->quickSearch->useAjax = false;
         $g->quickSearch->initValue = $this->search;
@@ -104,24 +111,6 @@ class Invoice extends View
         $this->page = $g->paginator->getCurrentPage();
 
         $g->addDecorator('ref_no', new Link($this->getURL('invoice') . '&id={$id}'));
-
-        $g->addActionMenuItem($this->getDeleteAction());
-        // setup other actions
-        foreach ($this->model->getActions() as $action_name => $action) {
-            if (!in_array($action_name, ['edit', 'delete']) && $action->enabled && $action->scope == UserAction\Generic::SINGLE_RECORD) {
-                // have single record action to reload grid after execution.
-                $ex = new ActionExecutor\UserAction();
-                $ex->onHook('afterExecute', function($ex, $return) use ($g) {
-                   return [
-                       new jsToast($return),
-                       $g->container->jsReload()
-                   ];
-                });
-                $action->ui['executor'] = $ex;
-
-                $g->addActionMenuItem($action);
-            }
-        }
 
         if ($this->hasPayment) {
             $g->addActionMenuItem('View Payments', $this->jsIIF($this->getURL($this->paymentPage->urlTrigger)));
@@ -262,47 +251,39 @@ class Invoice extends View
 
     /**
      * Properly wired add Invoice action.
-     * Always unload model for this action,
-     * this allow us to call it from anywhere.
      *
      * @return UserAction\Generic
      * @throws \atk4\core\Exception
      * @throws \atk4\data\Exception
      */
-    public function getAddInvoiceAction()
+    private function setAddAction(): UserAction\Generic
     {
-        $m = clone($this->model);
-        $m->unload();
         $ex = new \atk4\ui\ActionExecutor\UserAction(['title' => 'Add Invoice']);
-        $ex->onHook('afterExecute', function($x, $m) {
-            return [
-                new jsToast(['message' => 'Saved! Redirecting to invoice page.', 'duration' => 0]),
-                new jsExpression('document.location = [url]', ['url' => $this->getUrl($this->invoicePage->urlTrigger) . '&id= ' . $m->get($this->model->id_field)])
-            ];
+        $ex->onHook('afterExecute', function($x, $r, $id) {
+            return new jsExpression('document.location = [url]', ['url' => $this->getUrl($this->invoicePage->urlTrigger) . '&id= ' . $id]);
         });
-        $add = $m->getAction('add_invoice');
+        $add = $this->model->getAction('add');
+        // tell CRUD we will take care of ui response
+        $add->modifier = UserAction\Generic::MODIFIER_READ;
+        $add->callback = function($m) {
+            $m->save();
+
+            return 'Saved! Redirecting to Invoice';
+        };
         $add->ui['executor'] = $ex;
 
         return $add;
     }
 
     /**
-     * Properly wired delete action when in when using grid.
+     * Properly wired delete action.
      *
      * @return mixed
      * @throws \atk4\core\Exception
      */
-    public function getDeleteAction()
+    private function setDeleteAction(): UserAction\Generic
     {
         $ex = new UserConfirmation(['title' => 'Delete Invoice!']);
-        $ex->onHook('afterExecute', function($x, $return){
-            $msg = 'Invoice: ' . $return['title'] . ' has been delete.';
-            $id = $return['id'];
-            return [
-                new jsToast($msg),
-                (new jQuery('tr[data-id="' . $id .'"]'))->closest('tr')->transition('fade left')
-            ];
-        });
         $delete = $this->model->getAction('delete');
         $delete->ui['executor'] = $ex;
         $delete->confirmation = function ($a) {
@@ -314,11 +295,10 @@ class Invoice extends View
         $delete->ui['confirm'] = null;
         $delete->callback =  function ($m) {
             if ($m->loaded()) {
-                $id = $m->get($m->id_field);
                 $title = $m->getTitle();
                 $m->delete();
 
-                return ['id' => $id, 'title' => $title];
+                return 'Invoice: ' . $title . ' has been delete.';
             }
         };
 

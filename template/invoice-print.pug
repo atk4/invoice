@@ -1,0 +1,46 @@
+div(style="width:900px; margin-top:20px")
+    .ui.grid
+        .row
+            .eight.wide.column
+                h2.ui.header
+                    img(src="/public/logo.png")
+                    | ATK
+            .eight.wide.column
+                .ui.aligned.right.header
+                    .content Invoice
+                    .sub.header {$ref_no}
+                .ui.aligned.right.header
+                    .content Balance
+                    .sub.header {$balance}
+        .row
+            .eight.wide.column
+                .ui.two.column.grid
+                    .three.wide.column
+                        h4 Bill To:
+                    .column
+                        | {$client}
+            .eight.wide.column
+                .ui.two.column.grid
+                    .three.wide.column
+                        h4 Ship To:
+                    .column
+                        | {$client}
+        .row
+            .column
+                | {$InvoiceItems}
+    .ui.right.aligned.four.column.grid
+        .row
+            .column
+            .column
+            .column Net:
+            .column {$total_net}
+        .row
+            .column
+            .column
+            .column Vat:
+            .column {$total_vat}
+        .row
+            .column
+            .column
+            .column Total:
+            .column {$total_gross}

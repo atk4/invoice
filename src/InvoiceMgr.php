@@ -3,6 +3,7 @@
 namespace atk4\invoice;
 
 use atk4\data\Model;
+use atk4\invoice\Layout\InvoicePrint;
 use atk4\ui\ActionExecutor\UserConfirmation;
 use atk4\ui\BreadCrumb;
 use atk4\ui\Button;
@@ -110,8 +111,7 @@ class InvoiceMgr extends View
             if ($id) {
                 $this->invoiceModel->load($id);
                 $crumb->addCrumb($this->invoiceModel->getTitle());
-                $menu->addItem(['Add Invoice', 'icon' => 'plus'], $this->invoice->getAddInvoiceAction())->addClass('floated right');
-                $menu->addItem(['Delete', 'icon' => 'times'], $this->getDeleteInvoiceAction());
+                $menu->addItem(['Delete', 'icon' => 'times'], $this->getDeleteInvoiceAction())->addClass('floated right');
             }
 
             $crumb->popTitle();
@@ -142,28 +142,10 @@ class InvoiceMgr extends View
         // set page for printing invoice.
         $this->invoice->setPrintPage(function($page, $id) {
             $invoice_items = $this->invoiceModel->load($id)->ref($this->itemRef);
-            $container = View::addTo($page)->setStyle(['width' => '900px', 'margin-top' => '20px']);
-            $gl_top = GridLayout::addTo($container, [['rows' => 5, 'columns' => 2]])->setStyle(['width' => '900px', 'margin-top' => '20px']);
+            $print = InvoicePrint::addTo($page, ['uiPersistence' => $this->app->ui_persistence]);
+            $print->setModel($this->invoiceModel->load($id));
 
-            $comp_view = $gl_top->add(['View', 'defaultTemplate' => $this->invoice->getDir('template').'/company.html'], 'r1c1');
-            $comp_view->template->set('name', 'My Company');
-            $comp_view->template->set('image', $this->invoice->getDir('public').'/images/logo.png');
-
-            $inv_info = $gl_top->add('View', 'r1c2');
-            Header::addTo($inv_info, ['Invoice', 'subHeader' => '#'.$this->invoiceModel->getTitle()])->addClass('aligned right');
-            Header::addTo($inv_info, ['Balance', 'size' => 3, 'subHeader' => $this->invoice->get('balance')])->addClass('aligned right');
-
-            $bill_to = View::addTo($container, ['ui' => 'basic segment']);
-            Header::addTo($bill_to, ['Bill to: '.$this->invoiceModel->ref($this->clientRef ?: 'client')->getTitle(), 'size'=> 4]);
-            $table_view  = View::addTo($container);
-            $table = Table::addTo($table_view)->setModel($invoice_items);
-
-            View::addTo($container, ['ui' => 'hidden divider']);
-
-            $gl_bottom = GridLayout::addTo($container, [['rows' => 1, 'columns' => 4]]);
-            $card_container = $gl_bottom->add(['View', 'ui' => 'aligned right'], 'r1c4');
-            $card = Card::addTo($card_container, ['header' => false]);
-            $card->setModel($this->invoiceModel, $this->footerFields);
+            $print->add([Table::class], 'InvoiceItems')->addClass('celled striped')->setModel($invoice_items);
         });
 
         // set payment page.

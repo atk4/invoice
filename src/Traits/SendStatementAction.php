@@ -23,6 +23,7 @@ trait SendStatementAction
     {
         $this->addAction('send_statement', [
             'scope' => Generic::SINGLE_RECORD,
+            'modifier' => Generic::MODIFIER_READ,
             'args' => [
                 'subject' => ['type' => 'string', 'required' => true],
                 'message' => ['type' => 'text'],

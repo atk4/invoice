@@ -24,6 +24,7 @@ trait PayInvoiceAction
             'enabled' => function() {
               return $this->get('balance') > 0;
             },
+            'modifier' => Generic::MODIFIER_UPDATE,
             'scope' => Generic::SINGLE_RECORD,
             'args' => [
                 // todo $this->refModel('Payments')->getField('method') is not working.

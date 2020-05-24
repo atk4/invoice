@@ -50,13 +50,7 @@ class Invoice extends Model
 
         $this->setOrder('date');
 
-        $this->addAction('add_invoice', [
-            'scope' => Generic::NO_RECORDS,
-            'caption' => 'Add Invoice',
-            'description' => 'Add Invoice',
-            'fields' => ['ref_no', 'client_id', 'date', 'vat_rate'],
-            'callback' => 'save'
-        ]);
+        $this->getAction('add')->fields = ['ref_no', 'client_id', 'date', 'vat_rate'];
 
         // actions
         $this->initPayInvoiceAction();
