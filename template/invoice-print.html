@@ -1,0 +1,61 @@
+
+<div style="width:900px; margin-top:20px">
+  <div class="ui grid">
+    <div class="row">
+      <div class="eight wide column">
+        <h2 class="ui header"><img src="/public/logo.png"/>ATK</h2>
+      </div>
+      <div class="eight wide column">
+        <div class="ui aligned right header">
+          <div class="content">Invoice</div>
+          <div class="sub header">{$ref_no}</div>
+        </div>
+        <div class="ui aligned right header">
+          <div class="content">Balance</div>
+          <div class="sub header">{$balance}</div>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="eight wide column">
+        <div class="ui two column grid">
+          <div class="three wide column">
+            <h4>Bill To:</h4>
+          </div>
+          <div class="column">{$client}</div>
+        </div>
+      </div>
+      <div class="eight wide column">
+        <div class="ui two column grid">
+          <div class="three wide column">
+            <h4>Ship To:</h4>
+          </div>
+          <div class="column">{$client}</div>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="column">{$InvoiceItems}</div>
+    </div>
+  </div>
+  <div class="ui right aligned four column grid">
+    <div class="row">
+      <div class="column"></div>
+      <div class="column"></div>
+      <div class="column">Net:</div>
+      <div class="column">{$total_net}</div>
+    </div>
+    <div class="row">
+      <div class="column"></div>
+      <div class="column"></div>
+      <div class="column">Vat:</div>
+      <div class="column">{$total_vat}</div>
+    </div>
+    <div class="row">
+      <div class="column"></div>
+      <div class="column"></div>
+      <div class="column">Total:</div>
+      <div class="column">{$total_gross}</div>
+    </div>
+  </div>
+</div>

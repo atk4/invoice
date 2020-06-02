@@ -27,21 +27,21 @@ class Invoice extends Model
     {
         parent::init();
 
-        $this->hasOne('client_id', [Client::class, 'required' => true, 'caption' => 'Client', 'ui' => ['form' => ['width' => 'three']]])
+        $this->hasOne('client_id', [Client::class, 'required' => true, 'caption' => 'Client'])
             ->withTitle();
 
-        $this->addField('ref_no', ['required' => true, 'ui' => ['form' => ['width' => 'six']]]);
+        $this->addField('ref_no', ['required' => true]);
 
-        $this->addField('date', ['type' => 'date', 'default' => new \DateTime(), 'required' => true, 'ui' => ['form' => ['width' => 'four']]]);
-        $this->addField('due_date', ['type' => 'date', 'default' => (new \DateTime())->add(new \DateInterval('P'.$this->period.'D')),'ui' => ['form' => ['width' => 'four']]]);
+        $this->addField('date', ['type' => 'date', 'default' => new \DateTime(), 'required' => true]);
+        $this->addField('due_date', ['type' => 'date', 'default' => (new \DateTime())->add(new \DateInterval('P'.$this->period.'D'))]);
 
-        $this->addField('vat_rate', ['type' => 'number', 'default' => null]);
+        $this->addField('vat_rate', ['type' => 'number', 'default' => null, 'required' => true]);
 
         $this->hasMany('Items', InvoiceItems::class)
             ->addField('subtotal', ['aggregate'=>'sum', 'field'=>'amount', 'type' => 'money']);
 
         $this->hasMany('Payments', Payment::class)
-            ->addField('total_paid', ['aggregate' => 'sum', 'field' => 'amount', 'type' => 'money', 'caption' => 'Paid', 'ui' => ['form' => ['width' => 'three']]]);
+            ->addField('total_paid', ['aggregate' => 'sum', 'field' => 'amount', 'type' => 'money', 'caption' => 'Paid']);
 
         $this->addExpression('total_net', ['expr' => '[subtotal]', 'type' => 'money']);
         $this->addExpression('total_vat', ['expr' => "round([total_net] * [vat_rate]/100,2)", 'type' => 'money']);
@@ -49,6 +49,8 @@ class Invoice extends Model
         $this->addExpression('balance', ['expr' => '[total_gross] - [total_paid]', 'type' => 'money']);
 
         $this->setOrder('date');
+
+        $this->getAction('add')->fields = ['ref_no', 'client_id', 'date', 'vat_rate'];
 
         // actions
         $this->initPayInvoiceAction();

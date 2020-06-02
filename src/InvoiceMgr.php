@@ -1,12 +1,10 @@
 <?php
-/**
- * Manage invoice pages.
- */
+
 namespace atk4\invoice;
 
 use atk4\data\Model;
-use atk4\invoice\Model\Client;
-use atk4\invoice\Model\Payment;
+use atk4\invoice\Layout\InvoicePrint;
+use atk4\ui\ActionExecutor\UserConfirmation;
 use atk4\ui\BreadCrumb;
 use atk4\ui\Button;
 use atk4\ui\Card;
@@ -14,31 +12,68 @@ use atk4\ui\Exception;
 use atk4\ui\GridLayout;
 use atk4\ui\Header;
 use atk4\ui\Form;
+use atk4\ui\jsExpression;
 use atk4\ui\Menu;
 use atk4\ui\jsToast;
 use atk4\ui\Table;
 use atk4\ui\View;
 use atk4\ui\VirtualPage;
 
+/**
+ * Manage invoice pages.
+ * Act as a controller for VirtualPages created in invoice View.
+ *
+ * This is where content for virtual pages, like editing invoice, payments or display print page, are added.
+ * Virtual page are created in $invoice View instance but are set using this View.
+ *
+ */
 class InvoiceMgr extends View
 {
-    public $invoice = null;
+    /** @var View A view for listing the invoices. */
+    public $invoice;
 
-    public $invoiceModel = null;
-    public $tableFields = null;
-    public $headerFields = [];
-    public $footerFields = [];
-    public $itemFields =  null;
+    /** @var Model Invoice model  */
+    public $invoiceModel;
 
-    public $paymentModel = null;
-    public $paymentRelations = null;
-    public $paymentEditFields = null;
+    /** @var string The qualifier name for hasMany relation between the Invoice and InvoiceItems model that was set in Invoice model*/
+    public $itemRef;
+
+    /** @var string The qualifier name for hasOne relation between the InvoiceItems and Invoice model that was set in InvoiceItems model. */
+    public $itemLink;
+
+    /** @var string The qualifier name for hasOne relation between the Invoice and Client model that was set in Invoice model. */
+    public $clientRef;
+
+    /** @var array A list of field, from invoiceModel, to display in Invoices table. */
+    public $tableFields;
+
+    /** @var array A list of field from InvoiceItems model to use in MultiLine Input Field. */
+    public $itemFields;
+
+    /** @var Model The Model for payment. */
+    public $paymentModel;
+
+    /**
+     * When payment is save, related field will be saved using this array content in regards
+     * to the invoice model.
+     *  ex when using: ['client_id' => 'client_id']
+     *      This will save field payment.client_id using invoice.client_id.
+     *
+     * @var  array A list of array representing models relation using fields between Payment and Invoice model.
+     */
+    public $paymentRelations;
+
+    /** @var array A list of field to display for adding/editing Payment model. */
+    public $paymentEditFields;
+
+    /** @var array A list of field from Invoice Model to be display in Payment page. */
     public $paymentDisplayFields = null;
 
-    public $itemRef = null;
-    public $itemLink = null;
-    
-    public $clientRef = null;
+
+    /** @var array @deprecated Use custom form instead. */
+    public $headerFields = [];
+    /** @var array @deprecated use custom form instead. */
+    public $footerFields = [];
 
     public function init(): void
     {
@@ -48,6 +83,7 @@ class InvoiceMgr extends View
             throw new Exception('Invoice model not set.');
         }
 
+        // creating the default Invoice view.
         $this->invoice = $this->add(new Invoice([
                                 'model'          => $this->invoiceModel,
                                 'tableFields'    => $this->tableFields,
@@ -62,77 +98,54 @@ class InvoiceMgr extends View
 
             View::addTo($page, ['ui' =>'divider']);
 
-            $crumb->addCrumb('Invoices', $this->invoice->getURL());
+            $crumb->addCrumb('Invoices', $this->invoice->getUrl());
 
-            $m = Menu::addTo($page);
+            $menu = Menu::addTo($page);
             if ($this->paymentModel) {
-                $m->addItem(['Payments', 'icon' => 'dollar sign'])->link($this->invoice->paymentPage->getURL());
+                $menu->addItem(['Payments', 'icon' => 'dollar sign'])->link($this->invoice->getURL($this->invoice->paymentPage->urlTrigger));
             }
+            $menu->addItem(['Print', 'icon' => 'print'])->link($this->invoice->getURL($this->invoice->printPage->urlTrigger));
 
-            $form = Form::addTo($page, ['canLeave' => false]);
+            $form = Form::addTo($page, ['canLeave' => false, 'layout' => [new Layout\InvoiceForm()]]);
 
             if ($id) {
                 $this->invoiceModel->load($id);
                 $crumb->addCrumb($this->invoiceModel->getTitle());
-            } else {
-                $crumb->addCrumb('New Invoice');
+                $menu->addItem(['Delete', 'icon' => 'times'], $this->getDeleteInvoiceAction())->addClass('floated right');
             }
+
             $crumb->popTitle();
 
-            Button::addTo($form,['Back'])->link($this->invoice->url());
+            Button::addTo($form,['Back'])->link($this->invoice->getUrl());
 
-            $m = $form->setModel($this->invoiceModel, false);
+            $f_model = $form->setModel($this->invoiceModel);
 
-            $headerLayout = $form->layout->addSubLayout('Generic');
-            $headerGroup = $headerLayout->addGroup();
-            $headerGroup->setModel($m, $this->headerFields);
+            $form->addField('total_vat', ['readonly' => true]);
+            $form->addField('total_net', ['readonly' => true]);
+            $form->addField('total_gross', ['readonly' => true]);
 
-            $itemLayout = $form->layout->addSubLayout('Generic');
-            Header::addTo($itemLayout, ['Invoice Items', 'size' => 4]);
-
-            $ml = $itemLayout->addField('ml', ['MultiLine', 'options' => ['size' => 'small']]);
-            $ml->setModel($m, $this->itemFields, $this->itemRef, $this->itemLink);
-
+            $ml = $form->addField('ml', ['MultiLine', 'options' => ['size' => 'small'], 'caption' => 'Items']);
+            $ml->setModel($f_model, $this->itemFields, $this->itemRef, $this->itemLink);
             $ml->onLineChange([$this->invoiceModel, 'jsUpdateFields'], ['qty', 'price']);
-
-
-            $columnsLayout = $form->layout->addSubLayout('Columns');
-            $columnsLayout->addColumn(12);
-            $c = $columnsLayout->addColumn(4);
-            $c->setModel($m, $this->footerFields );
 
             $form->onSubmit(function($f) use ($ml) {
                 $f->model->save();
                 $ml->saveRows();
 
-                return new jsToast('Saved!');
+                return [
+                    new jsToast('Saved!'),
+                    new jsExpression('document.location = [url]', ['url' => $this->invoice->getUrl('invoice')])
+                ];
             });
         });
 
+        // set page for printing invoice.
         $this->invoice->setPrintPage(function($page, $id) {
             $invoice_items = $this->invoiceModel->load($id)->ref($this->itemRef);
-            $container = View::addTo($page)->setStyle(['width' => '900px', 'margin-top' => '20px']);
-            $gl_top = GridLayout::addTo($container, [['rows' => 5, 'columns' => 2]])->setStyle(['width' => '900px', 'margin-top' => '20px']);
+            $print = InvoicePrint::addTo($page, ['uiPersistence' => $this->app->ui_persistence]);
+            $print->setModel($this->invoiceModel->load($id));
 
-            $comp_view = $gl_top->add(['View', 'defaultTemplate' => $this->invoice->getDir('template').'/company.html'], 'r1c1');
-            $comp_view->template->set('name', 'My Company');
-            $comp_view->template->set('image', $this->invoice->getDir('public').'/images/logo.png');
-
-            $inv_info = $gl_top->add('View', 'r1c2');
-            Header::addTo($inv_info, ['Invoice', 'subHeader' => '#'.$this->invoiceModel->getTitle()])->addClass('aligned right');
-            Header::addTo($inv_info, ['Balance', 'size' => 3, 'subHeader' => $this->invoice->get('balance')])->addClass('aligned right');
-
-            $bill_to = View::addTo($container, ['ui' => 'basic segment']);
-            Header::addTo($bill_to, ['Bill to: '.$this->invoiceModel->ref($this->clientRef ?: 'client')->getTitle(), 'size'=> 4]);
-            $table_view  = View::addTo($container);
-            $table = Table::addTo($table_view)->setModel($invoice_items);
-
-            View::addTo($container, ['ui' => 'hidden divider']);
-
-            $gl_bottom = GridLayout::addTo($container, [['rows' => 1, 'columns' => 4]]);
-            $card_container = $gl_bottom->add(['View', 'ui' => 'aligned right'], 'r1c4');
-            $card = Card::addTo($card_container, ['header' => false]);
-            $card->setModel($this->invoiceModel, $this->footerFields);
+            $print->add([Table::class], 'InvoiceItems')->addClass('celled striped')->setModel($invoice_items);
         });
 
         // set payment page.
@@ -153,7 +166,8 @@ class InvoiceMgr extends View
 
                 Header::addTo($paymentEdit, [$balance]);
                 $editCrumb->addCrumb('Invoices', $this->invoice->getURL());
-                $editCrumb->addCrumb($this->invoiceModel->getTitle().' \'s payments', $this->invoice->paymentPage->getURL());
+                $editCrumb->addCrumb($this->invoiceModel->getTitle(), $this->invoice->getUrl('invoice'));
+                $editCrumb->addCrumb($this->invoiceModel->getTitle().' \'s payments', $this->invoice->getURL('payment'));
 
                 $pId = $page->stickyGet('pId');
                 if ($pId) {
@@ -172,7 +186,10 @@ class InvoiceMgr extends View
                     }
                     $f->model->save();
 
-                    return $this->app->jsRedirect($this->invoice->paymentPage->getURL());
+                    return  [
+                        new jsToast(['message' => 'Saved! Redirecting to Invoice', 'duration' => 0]),
+                        new jsExpression('document.location = [url]', ['url' => $this->invoice->getUrl('payment')])
+                    ];
                 });
 
                 // setup payment grid display
@@ -180,12 +197,12 @@ class InvoiceMgr extends View
                 View::addTo($page, ['ui' => 'divider']);
 
                 $crumb->addCrumb('Invoices', $this->invoice->getUrl());
+                $crumb->addCrumb($this->invoiceModel->getTitle(), $this->invoice->getUrl('invoice'));
                 $crumb->addCrumb($this->invoiceModel->getTitle().' \'s payments');
                 $crumb->popTitle();
 
                 $m = Menu::addTo($page);
                 $m->addItem(['Add Payment', 'icon' => 'plus'])->link($paymentEdit->getURL());
-                $m->addItem(['Edit Invoice', 'icon' => 'edit'])->link($this->invoice->invoicePage->getURL());
 
                 $gl = GridLayout::addTo($page, [['columns'=>3, 'rows'=>1]]);
                 $seg = $gl->add(['View', 'ui' => 'basic segment'], 'r1c1');
@@ -229,5 +246,39 @@ class InvoiceMgr extends View
             }
         }
         return $link;
+    }
+
+    /**
+     * Properly wired delete action when in Invoice page.
+     *
+     * @return mixed
+     * @throws \atk4\core\Exception
+     */
+    public function getDeleteInvoiceAction()
+    {
+        $ex = new UserConfirmation(['title' => 'Delete Invoice!']);
+        $ex->onHook('afterExecute', function($x, $return){
+            return [
+                new jsToast($return),
+                new jsExpression('document.location = [url]', ['url' => $this->invoice->getUrl()]),
+            ];
+        });
+        $delete = $this->invoiceModel->getAction('delete');
+        $delete->ui['executor'] = $ex;
+        $delete->confirmation = function ($a) {
+            $m = $a->getModel();
+            $title = $m->getField($m->title_field)->getCaption();
+            $value = $m->getTitle();
+            return "Delete invoice using {$title}: <b>{$value}</b>?";
+        };
+        $delete->callback =  function ($m) {
+            if ($m->loaded()) {
+                $m->delete();
+
+                return 'Invoice  ' . $m->getTitle() . 'has been deleted!';
+            }
+        };
+
+        return $delete;
     }
 }
