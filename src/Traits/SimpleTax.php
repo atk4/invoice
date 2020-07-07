@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types = 1);
 /**
  * Apply some method for calculating total.
  * InvoiceMgr will call jsUpdateField when field from invoice line are change.
@@ -14,11 +16,6 @@ trait SimpleTax
 {
     /**
      * Update field value in form via javascript when onChange event is fire on MultiLine.
-     *
-     * @param array $rows  The items rows with new value.
-     * @param Form  $f     The form where multiline is set.
-     *
-     * @return array
      */
     public function jsUpdateFields(array $rows, Form $f): ?array
     {
@@ -32,13 +29,13 @@ trait SimpleTax
 
         // set total field values
         $resp = [];
-        if ($field = $f->getField('total_net')){
+        if ($field = $f->getControl('total_net')){
             $resp[] = $field->jsInput()->val(number_format($total_net, 2));
         }
-        if ($field =  $f->getField('total_vat')) {
+        if ($field =  $f->getControl('total_vat')) {
             $resp[] = $field->jsInput()->val(number_format($total_vat, 2));
         }
-        if ($field = $f->getField('total_gross')) {
+        if ($field = $f->getControl('total_gross')) {
             $resp[] = $field->jsInput()->val(number_format($total_net + $total_vat, 2));
         }
 
@@ -47,10 +44,6 @@ trait SimpleTax
 
     /**
      * Return total of each item in a row.
-     *
-     * @param array $itemRows
-     *
-     * @return float
      */
     protected function getSubTotal(array $itemRows): float
     {
@@ -67,10 +60,6 @@ trait SimpleTax
 
     /**
      * Return tax amount from total amount.
-     *
-     * @param $total
-     *
-     * @return float
      */
     protected function getTotalTax(float $total): float
     {

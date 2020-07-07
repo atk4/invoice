@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types = 1);
 /**
  * Trait implements statement generating and sending action for client model.
  *
@@ -7,7 +9,7 @@
  */
 namespace atk4\invoice\Traits;
 
-use atk4\data\UserAction\Generic;
+use atk4\data\Model\UserAction;
 use atk4\ui\CardTable;
 use atk4\ui\Table;
 use atk4\ui\View;
@@ -19,11 +21,11 @@ trait SendStatementAction
      *
      * Run this method from your models init() method.
      */
-    public function initSendStatementAction()
+    public function initSendStatementAction(): void
     {
-        $this->addAction('send_statement', [
-            'scope' => Generic::SINGLE_RECORD,
-            'modifier' => Generic::MODIFIER_READ,
+        $this->addUserAction('send_statement', [
+            'appliesTo' => UserAction::APPLIES_TO_SINGLE_RECORD,
+            'modifier' => UserAction::MODIFIER_READ,
             'args' => [
                 'subject' => ['type' => 'string', 'required' => true],
                 'message' => ['type' => 'text'],
@@ -34,10 +36,9 @@ trait SendStatementAction
 
     /**
      * Statement preview view.
-     *
-     * @return string
      */
-    public function get_statement_preview() {
+    public function get_statement_preview(): string
+    {
         $v = new View();
 
         // header
@@ -64,10 +65,9 @@ trait SendStatementAction
 
     /**
      * Execute send statement action.
-     *
-     * @return string
      */
-    public function send_statement() {
+    public function send_statement(): string
+    {
         /*
         if (!isset($this->app->mailer)) {
             throw new ValidationException('ouch');
@@ -77,6 +77,6 @@ trait SendStatementAction
         
         // @todo - implement actual email sending here. Maybe we can use atk4/outbox for that?
         
-        return 'Statement sent to '.$this['email'];
+        return 'Statement sent to '. $this['email'];
     }
 }
