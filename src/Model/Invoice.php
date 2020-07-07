@@ -1,13 +1,12 @@
 <?php
+
+declare(strict_types = 1);
 /**
  * Invoice model
  */
 namespace atk4\invoice\Model;
 
 use atk4\data\Model;
-use atk4\data\UserAction\Generic;
-use atk4\ui\ActionExecutor\UserAction;
-use atk4\ui\Exception;
 use atk4\invoice\Traits\SimpleTax;
 use atk4\invoice\Traits\PayInvoiceAction;
 
@@ -50,7 +49,7 @@ class Invoice extends Model
 
         $this->setOrder('date');
 
-        $this->getAction('add')->fields = ['ref_no', 'client_id', 'date', 'vat_rate'];
+        $this->getUserAction('add')->fields = ['ref_no', 'client_id', 'date', 'vat_rate'];
 
         // actions
         $this->initPayInvoiceAction();

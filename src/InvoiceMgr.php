@@ -1,10 +1,12 @@
 <?php
 
+declare(strict_types = 1);
+
 namespace atk4\invoice;
 
 use atk4\data\Model;
+use atk4\invoice\Layout\InvoiceForm;
 use atk4\invoice\Layout\InvoicePrint;
-use atk4\ui\ActionExecutor\UserConfirmation;
 use atk4\ui\BreadCrumb;
 use atk4\ui\Button;
 use atk4\ui\Card;
@@ -16,6 +18,8 @@ use atk4\ui\jsExpression;
 use atk4\ui\Menu;
 use atk4\ui\jsToast;
 use atk4\ui\Table;
+use atk4\ui\UserAction\BasicExecutor;
+use atk4\ui\UserAction\ConfirmationExecutor;
 use atk4\ui\View;
 use atk4\ui\VirtualPage;
 
@@ -67,7 +71,7 @@ class InvoiceMgr extends View
     public $paymentEditFields;
 
     /** @var array A list of field from Invoice Model to be display in Payment page. */
-    public $paymentDisplayFields = null;
+    public $paymentDisplayFields;
 
 
     /** @var array @deprecated Use custom form instead. */
@@ -106,7 +110,7 @@ class InvoiceMgr extends View
             }
             $menu->addItem(['Print', 'icon' => 'print'])->link($this->invoice->getURL($this->invoice->printPage->urlTrigger));
 
-            $form = Form::addTo($page, ['canLeave' => false, 'layout' => [new Layout\InvoiceForm()]]);
+            $form = Form::addTo($page, ['canLeave' => false, 'layout' => [InvoiceForm::class]]);
 
             if ($id) {
                 $this->invoiceModel->load($id);
@@ -120,13 +124,13 @@ class InvoiceMgr extends View
 
             $f_model = $form->setModel($this->invoiceModel);
 
-            $form->addField('total_vat', ['readonly' => true]);
-            $form->addField('total_net', ['readonly' => true]);
-            $form->addField('total_gross', ['readonly' => true]);
+            $form->addControl('total_vat', [Form\Control\Line::class, 'readonly' => true]);
+            $form->addControl('total_net', [Form\Control\Line::class, 'readonly' => true]);
+            $form->addControl('total_gross', [Form\Control\Line::class, 'readonly' => true]);
 
-            $ml = $form->addField('ml', ['MultiLine', 'options' => ['size' => 'small'], 'caption' => 'Items']);
+            $ml = $form->addControl('ml', [Form\Control\Multiline::class, 'options' => ['size' => 'small'], 'caption' => 'Items']);
             $ml->setModel($f_model, $this->itemFields, $this->itemRef, $this->itemLink);
-            $ml->onLineChange([$this->invoiceModel, 'jsUpdateFields'], ['qty', 'price']);
+            $ml->onLineChange(\Closure::fromCallable([$this->invoiceModel, 'jsUpdateFields']), ['qty', 'price']);
 
             $form->onSubmit(function($f) use ($ml) {
                 $f->model->save();
@@ -182,7 +186,7 @@ class InvoiceMgr extends View
                 $formPayment->setModel($this->paymentModel, $this->paymentEditFields);
                 $formPayment->onSubmit(function($f) {
                     foreach ($this->paymentRelations as $paiement => $relation) {
-                        $f->model[$paiement] = $this->invoiceModel[$relation];
+                        $f->model->set($paiement, $this->invoiceModel->get($relation));
                     }
                     $f->model->save();
 
@@ -205,7 +209,7 @@ class InvoiceMgr extends View
                 $m->addItem(['Add Payment', 'icon' => 'plus'])->link($paymentEdit->getURL());
 
                 $gl = GridLayout::addTo($page, [['columns'=>3, 'rows'=>1]]);
-                $seg = $gl->add(['View', 'ui' => 'basic segment'], 'r1c1');
+                $seg = View::addTo($gl, ['ui' => 'basic segment'], ['r1c1']);
                 $card = Card::addTo($seg, ['header' => false, 'useLabel' => true]);
                 $card->setModel($this->invoiceModel, $this->paymentDisplayFields);
 
@@ -214,7 +218,7 @@ class InvoiceMgr extends View
                 // Add payment table.
                 $g = Table::addTo($page);
                 $g->setModel($this->paymentModel);
-                $actions = $g->addColumn(null, 'ActionButtons');
+                $actions = $g->addColumn(null, [Table\Column\ActionButtons::class]);
                 $actions->addButton(['icon' => 'edit'], $this->invoice->jsIIF($paymentEdit->getURL(), 'pId'));
                 $actions->addButton(['icon' => 'trash'], function ($js, $id) use ($g, $seg){
                     $g->model->load($id)->delete();
@@ -229,11 +233,6 @@ class InvoiceMgr extends View
      * Find a related field between two model reference.
      * Link is field id for hasOne relation or the Reference name
      * for hasMany relation.
-     *
-     * @param Model $model
-     * @param Model $related
-     *
-     * @return string|null
      */
     public function findRelatedField(Model $model, Model $related)
     {
@@ -250,20 +249,17 @@ class InvoiceMgr extends View
 
     /**
      * Properly wired delete action when in Invoice page.
-     *
-     * @return mixed
-     * @throws \atk4\core\Exception
      */
-    public function getDeleteInvoiceAction()
+    public function getDeleteInvoiceAction(): Model\UserAction
     {
-        $ex = new UserConfirmation(['title' => 'Delete Invoice!']);
-        $ex->onHook('afterExecute', function($x, $return){
+        $ex = new ConfirmationExecutor(['title' => 'Delete Invoice!']);
+        $ex->onHook(BasicExecutor::HOOK_AFTER_EXECUTE, function($x, $return){
             return [
                 new jsToast($return),
                 new jsExpression('document.location = [url]', ['url' => $this->invoice->getUrl()]),
             ];
         });
-        $delete = $this->invoiceModel->getAction('delete');
+        $delete = $this->invoiceModel->getUSerAction('delete');
         $delete->ui['executor'] = $ex;
         $delete->confirmation = function ($a) {
             $m = $a->getModel();
@@ -277,6 +273,8 @@ class InvoiceMgr extends View
 
                 return 'Invoice  ' . $m->getTitle() . 'has been deleted!';
             }
+
+            return 'Unable to delete invoice';
         };
 
         return $delete;

@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types = 1);
 /**
  * Trait implements action to fully pay invoice.
  *
@@ -7,7 +9,7 @@
  */
 namespace atk4\invoice\Traits;
 
-use atk4\data\UserAction\Generic;
+use atk4\data\Model\UserAction;
 
 trait PayInvoiceAction
 {
@@ -16,16 +18,16 @@ trait PayInvoiceAction
      *
      * Run this method from your models init() method.
      */
-    public function initPayInvoiceAction()
+    public function initPayInvoiceAction(): void
     {
-        $this->addAction('pay_invoice', [
+        $this->addUserAction('pay_invoice', [
             'caption' => 'Pay Full Invoice Amount',
             'description' => 'Pay',
             'enabled' => function() {
               return $this->get('balance') > 0;
             },
-            'modifier' => Generic::MODIFIER_UPDATE,
-            'scope' => Generic::SINGLE_RECORD,
+            'modifier' =>UserAction::MODIFIER_UPDATE,
+            'appliesTo' => UserAction::APPLIES_TO_SINGLE_RECORD,
             'args' => [
                 // todo $this->refModel('Payments')->getField('method') is not working.
                 'method' => ['required' => true, 'default' => 'cash', 'enum' => ['cash', 'debit', 'credit']],
@@ -35,16 +37,14 @@ trait PayInvoiceAction
 
     /**
      * Execute pay invoice action.
-     *
-     * @return string
      */
-    public function pay_invoice($method)
+    public function pay_invoice(string $method): string
     {
         $this->ref('Payments')->save([
             'method' => $method,
             'paid_on' => new \DateTime(),
-            'amount' => $this['balance'],
-            'client_id' => $this['client_id'],
+            'amount' => $this->get('balance'),
+            'client_id' => $this->get('client_id'),
         ]);
         
         return 'Invoice '.$this->getTitle().' is fully paid now';

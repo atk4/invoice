@@ -1,19 +1,21 @@
 <?php
 
+declare(strict_types = 1);
+
 namespace atk4\invoice;
 
-use atk4\data\UserAction;
-use atk4\ui\ActionExecutor\UserConfirmation;
+use atk4\data\Model\UserAction;
 use atk4\ui\CRUD;
-use atk4\ui\Exception;
 use atk4\ui\Grid;
 use atk4\ui\jQuery;
 use atk4\ui\jsExpression;
 use atk4\ui\jsToast;
-use atk4\ui\TableColumn\Link;
+use atk4\ui\Table\Column\Link;
+use atk4\ui\UserAction\BasicExecutor;
+use atk4\ui\UserAction\ConfirmationExecutor;
+use atk4\ui\UserAction\ModalExecutor;
 use atk4\ui\View;
 use atk4\ui\VirtualPage;
-use atk4\ui\ActionExecutor;
 
 /**
  * Default view for displaying invoice listing.
@@ -24,7 +26,7 @@ class Invoice extends View
     /** @var VirtualPage for editing Invoice and InvoiceItems */
     public $invoicePage;
 
-    /** @var VirtuaPage for printing Invoice. */
+    /** @var VirtualPage for printing Invoice. */
     public $printPage;
 
     /** @var VirtualPage for displaying and editing Payments  */
@@ -43,9 +45,9 @@ class Invoice extends View
     public $currentId = null;
 
     /** @var Grid default seed*/
-    public $grid = null;
+    public $grid;
     public $ipp = 10;
-    public $jsAction = null;
+    public $jsAction;
 
     /** @var string The current invoice id. Will be set as 'id' in Get params. */
     private $invoiceId;
@@ -93,10 +95,8 @@ class Invoice extends View
 
     /**
      * Default View.
-     *
-     * @throws Exception
      */
-    public function displayInvoices()
+    public function displayInvoices(): void
     {
         $this->setAddAction();
         $this->setDeleteAction();
@@ -140,10 +140,8 @@ class Invoice extends View
 
     /**
      * Callback for setting printing page.
-     *
-     * @param $fx
      */
-    public function setPrintPage($fx)
+    public function setPrintPage(callable $fx): void
     {
         if (!($this->getPage('popup') === 'print')) {
             return;
@@ -159,10 +157,8 @@ class Invoice extends View
 
     /**
      * Callback for setting the Invoice page.
-     *
-     * @param $fx
      */
-    public function setInvoicePage($fx)
+    public function setInvoicePage(callable $fx): void
     {
         if (!($this->getPage() === 'invoice')) {
             return;
@@ -172,10 +168,8 @@ class Invoice extends View
 
     /**
      * Callback for setting the payment page.
-     *
-     * @param $fx
      */
-    public function setPaymentPage($fx)
+    public function setPaymentPage(callable $fx): void
     {
         if (!$this->hasPayment || !($this->getPage() === 'payment')) {
             return;
@@ -186,23 +180,16 @@ class Invoice extends View
 
     /**
      * Return current VirtualPage
-     *
-     * @return false|int|string
      */
-    public function getPage($type = 'callback')
+    public function getPage(string $type = 'callback'): string
     {
-        return array_search($type, $_GET);
+        return array_search($type, $_GET) ? array_search($type, $_GET) : '';
     }
 
     /**
      * Return an IIF js function that will set document.location via javascript.
-     *
-     * @param $url
-     * @param string $arg
-     *
-     * @return jsExpression
      */
-    public function jsIIF($url, $arg = 'id')
+    public function jsIIF(string $url, string $arg = 'id'): jsExpression
     {
         return new jsExpression(
             "(function(url, id){document.location = url + '&{$arg}=' + id})([url],[id])",
@@ -212,16 +199,14 @@ class Invoice extends View
 
     /**
      * Manage url for this view.
-     *
-     * @return string
      */
-    public function getURL($virtualPage = null, bool $includeParam = true): string
+    public function getURL(string $pageName = null, bool $includeParam = true): string
     {
         $params = [];
         $url = strtok($this->url(), '?');
 
-        if ($virtualPage) {
-            $params[$virtualPage] = $virtualPage === $this->printPage->urlTrigger ? 'popup' : 'callback';
+        if ($pageName) {
+            $params[$pageName] = $pageName === $this->printPage->urlTrigger ? 'popup' : 'callback';
         }
 
         if ($includeParam) {
@@ -251,20 +236,17 @@ class Invoice extends View
 
     /**
      * Properly wired add Invoice action.
-     *
-     * @return UserAction\Generic
-     * @throws \atk4\core\Exception
-     * @throws \atk4\data\Exception
      */
-    private function setAddAction(): UserAction\Generic
+    private function setAddAction(): UserAction
     {
-        $ex = new \atk4\ui\ActionExecutor\UserAction(['title' => 'Add Invoice']);
-        $ex->onHook('afterExecute', function($x, $r, $id) {
+        $ex = new ModalExecutor(['title' => 'Add Invoice']);
+        $ex->onHook(BasicExecutor::HOOK_AFTER_EXECUTE, function($x, $r, $id) {
+
             return new jsExpression('document.location = [url]', ['url' => $this->getUrl($this->invoicePage->urlTrigger) . '&id= ' . $id]);
         });
-        $add = $this->model->getAction('add');
+        $add = $this->model->getUserAction('add');
         // tell CRUD we will take care of ui response
-        $add->modifier = UserAction\Generic::MODIFIER_READ;
+        $add->modifier = UserAction::MODIFIER_READ;
         $add->callback = function($m) {
             $m->save();
 
@@ -277,14 +259,11 @@ class Invoice extends View
 
     /**
      * Properly wired delete action.
-     *
-     * @return mixed
-     * @throws \atk4\core\Exception
      */
-    private function setDeleteAction(): UserAction\Generic
+    private function setDeleteAction(): UserAction
     {
-        $ex = new UserConfirmation(['title' => 'Delete Invoice!']);
-        $delete = $this->model->getAction('delete');
+        $ex = new ConfirmationExecutor(['title' => 'Delete Invoice!']);
+        $delete = $this->model->getUserAction('delete');
         $delete->ui['executor'] = $ex;
         $delete->confirmation = function ($a) {
             $m = $a->getModel();
@@ -292,6 +271,7 @@ class Invoice extends View
             $value = $m->getTitle();
             return "Delete invoice using {$title}: <b>{$value}</b>?";
         };
+
         $delete->ui['confirm'] = null;
         $delete->callback =  function ($m) {
             if ($m->loaded()) {
