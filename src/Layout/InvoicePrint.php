@@ -15,7 +15,7 @@ class InvoicePrint extends View
 
     public $uiPersistence;
 
-    public function renderView()
+    protected function renderView(): void
     {
         parent::renderView();
         if ($this->model && $this->uiPersistence) {
