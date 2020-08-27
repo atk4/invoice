@@ -14,7 +14,7 @@ class Payment extends Model
     public $caption = 'Payment';
     public $title_field = 'method';
 
-    public function init(): void
+    protected function init(): void
     {
         parent::init();
 

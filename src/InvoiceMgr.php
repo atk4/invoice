@@ -79,7 +79,7 @@ class InvoiceMgr extends View
     /** @var array @deprecated use custom form instead. */
     public $footerFields = [];
 
-    public function init(): void
+    protected function init(): void
     {
         parent::init();
 

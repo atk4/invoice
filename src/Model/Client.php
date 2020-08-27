@@ -16,7 +16,7 @@ class Client extends Model
     public $table = 'client';
     public $caption = 'Client';
 
-    public function init(): void
+    protected function init(): void
     {
         parent::init();
 

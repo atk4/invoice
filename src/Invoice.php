@@ -61,7 +61,7 @@ class Invoice extends View
     /** @var string The current search value for Grid. Will be set as '_q' in Get params. */
     private $search;
 
-    public function init(): void
+    protected function init(): void
     {
         parent::init();
 

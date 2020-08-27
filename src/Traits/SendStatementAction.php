@@ -44,12 +44,12 @@ trait SendStatementAction
         // header
         $ct = CardTable::addTo($v);
         $ct->header = false;
-        $ct->init();
+        $ct->invokeInit();
         $ct->setModel($this, ['name', 'email']);
 
         // invoice table
         $t = Table::addTo($v);
-        $t->init();
+        $t->invokeInit();
         $t->setModel($this->ref('Invoices'), ['date','ref_no','vat_rate','total_net','total_vat','total_gross','total_paid','balance']);
         $t->addTotals([
             'vat_rate'=>'Total:',

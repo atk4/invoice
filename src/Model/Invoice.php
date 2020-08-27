@@ -22,7 +22,7 @@ class Invoice extends Model
     /* @var int How long is invoice due period in days */
     public $period = '30';
 
-    public function init(): void
+    protected function init(): void
     {
         parent::init();
 
