@@ -73,10 +73,10 @@ class Invoice extends View
             ]);
         }
 
-        $this->invoiceId = $this->app->stickyGet('id');
-        $this->page = $this->app->stickyGet('p');
-        $this->sortBy = $this->app->stickyGet('sortBy');
-        $this->search = $this->app->stickyGet('_q');;
+        $this->invoiceId = $this->getApp()->stickyGet('id');
+        $this->page = $this->getApp()->stickyGet('p');
+        $this->sortBy = $this->getApp()->stickyGet('sortBy');
+        $this->search = $this->getApp()->stickyGet('_q');;
 
         if (!$this->jsAction) {
             $this->jsAction = new jsToast('Saved!');
@@ -131,8 +131,8 @@ class Invoice extends View
      */
     public function get($field)
     {
-        if ($this->app->ui_persistence) {
-            return $this->app->ui_persistence->typecastSaveField($this->model->getField($field), $this->model->get($field));
+        if ($this->getApp()->ui_persistence) {
+            return $this->getApp()->ui_persistence->typecastSaveField($this->model->getField($field), $this->model->get($field));
         } else {
             return $this->model->get($field);
         }

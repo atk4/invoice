@@ -146,7 +146,7 @@ class InvoiceMgr extends View
         // set page for printing invoice.
         $this->invoice->setPrintPage(function($page, $id) {
             $invoice_items = $this->invoiceModel->load($id)->ref($this->itemRef);
-            $print = InvoicePrint::addTo($page, ['uiPersistence' => $this->app->ui_persistence]);
+            $print = InvoicePrint::addTo($page, ['uiPersistence' => $this->getApp()->ui_persistence]);
             $print->setModel($this->invoiceModel->load($id));
 
             $print->add([Table::class], 'InvoiceItems')->addClass('celled striped')->setModel($invoice_items);

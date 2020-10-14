@@ -69,7 +69,7 @@ trait SendStatementAction
     public function send_statement(): string
     {
         /*
-        if (!isset($this->app->mailer)) {
+        if (!isset($this->getApp()->mailer)) {
             throw new ValidationException('ouch');
         }
         */
