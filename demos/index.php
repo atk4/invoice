@@ -9,7 +9,7 @@ use atk4\ui\Header;
 Header::addTo($app, ['Migration Console']);
 
 Button::addTo($app, ['Go to demo..', 'big primary'])->link(['invoice']);
-$app->add(MigratorConsole::class)
+$app->add([MigratorConsole::class])
     ->migrateModels([
         new Model\Client($app->db),
         new Model\Invoice($app->db),
