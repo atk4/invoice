@@ -9,8 +9,8 @@
     "atk4/schema": "dev-develop"
   },
   "require-release": {
-    "atk4/ui": "^2.0",
-    "atk4/schema": "^2.0"
+    "atk4/ui": "~2.3.0",
+    "atk4/schema": "~2.3.0"
   },
   "autoload": {
     "psr-4": {
