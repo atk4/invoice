@@ -239,7 +239,7 @@ class InvoiceMgr extends View
         $link = null;
         $refs = $model->getRefs();
         foreach ($refs as $ref) {
-            if ($ref->getTheirModel()->table === $related->table) {
+            if ($ref->createTheirModel()->table === $related->table) {
                 $link = $ref->link;
                 break;
             }
