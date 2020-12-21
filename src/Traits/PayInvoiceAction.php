@@ -7,9 +7,9 @@ declare(strict_types = 1);
  * Usage:
  * Add this trait in your Invoice model and call $this->initPayInvoiceAction() method from models init method.
  */
-namespace atk4\invoice\Traits;
+namespace Atk4\Invoice\Traits;
 
-use atk4\data\Model\UserAction;
+use Atk4\Data\Model\UserAction;
 
 trait PayInvoiceAction
 {

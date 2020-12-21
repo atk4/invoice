@@ -8,9 +8,9 @@ declare(strict_types = 1);
  * goes via jsUpdateFields($rows, $f) method and that your traits implements this method.
  *
  */
-namespace atk4\invoice\Traits;
+namespace Atk4\Invoice\Traits;
 
-use atk4\ui\Form;
+use Atk4\Ui\Form;
 
 trait SimpleTax
 {

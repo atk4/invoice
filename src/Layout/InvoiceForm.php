@@ -5,7 +5,7 @@ declare(strict_types = 1);
 namespace atk4\invoice\Layout;
 
 
-use atk4\ui\Form\Layout;
+use Atk4\Ui\Form\Layout;
 
 /**
  * Special layout for Invoice Form.

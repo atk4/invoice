@@ -2,26 +2,26 @@
 
 declare(strict_types = 1);
 
-namespace atk4\invoice;
+namespace Atk4\Invoice;
 
-use atk4\data\Model;
-use atk4\invoice\Layout\InvoiceForm;
-use atk4\invoice\Layout\InvoicePrint;
-use atk4\ui\BreadCrumb;
-use atk4\ui\Button;
-use atk4\ui\Card;
-use atk4\ui\Exception;
-use atk4\ui\GridLayout;
-use atk4\ui\Header;
-use atk4\ui\Form;
-use atk4\ui\jsExpression;
-use atk4\ui\Menu;
-use atk4\ui\jsToast;
-use atk4\ui\Table;
-use atk4\ui\UserAction\BasicExecutor;
-use atk4\ui\UserAction\ConfirmationExecutor;
-use atk4\ui\View;
-use atk4\ui\VirtualPage;
+use Atk4\Data\Model;
+use Atk4\Invoice\Layout\InvoiceForm;
+use Atk4\Invoice\Layout\InvoicePrint;
+use Atk4\Ui\BreadCrumb;
+use Atk4\Ui\Button;
+use Atk4\Ui\Card;
+use Atk4\Ui\Exception;
+use Atk4\Ui\GridLayout;
+use Atk4\Ui\Header;
+use Atk4\Ui\Form;
+use Atk4\Ui\JsExpression;
+use Atk4\Ui\Menu;
+use Atk4\Ui\JsToast;
+use Atk4\Ui\Table;
+use Atk4\Ui\UserAction\BasicExecutor;
+use Atk4\Ui\UserAction\ConfirmationExecutor;
+use Atk4\Ui\View;
+use Atk4\Ui\VirtualPage;
 
 /**
  * Manage invoice pages.

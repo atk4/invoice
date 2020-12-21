@@ -2,20 +2,20 @@
 
 declare(strict_types = 1);
 
-namespace atk4\invoice;
+namespace Atk4\Invoice;
 
-use atk4\data\Model\UserAction;
-use atk4\ui\CRUD;
-use atk4\ui\Grid;
-use atk4\ui\jQuery;
-use atk4\ui\jsExpression;
-use atk4\ui\jsToast;
-use atk4\ui\Table\Column\Link;
-use atk4\ui\UserAction\BasicExecutor;
-use atk4\ui\UserAction\ConfirmationExecutor;
-use atk4\ui\UserAction\ModalExecutor;
-use atk4\ui\View;
-use atk4\ui\VirtualPage;
+use Atk4\Data\Model\UserAction;
+use Atk4\Ui\CRUD;
+use Atk4\Ui\Grid;
+use Atk4\Ui\jQuery;
+use Atk4\Ui\jsExpression;
+use Atk4\Ui\jsToast;
+use Atk4\Ui\Table\Column\Link;
+use Atk4\Ui\UserAction\BasicExecutor;
+use Atk4\Ui\UserAction\ConfirmationExecutor;
+use Atk4\Ui\UserAction\ModalExecutor;
+use Atk4\Ui\View;
+use Atk4\Ui\VirtualPage;
 
 /**
  * Default view for displaying invoice listing.

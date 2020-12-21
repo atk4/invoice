@@ -1,10 +1,10 @@
 <?php
-namespace atk4\invoice;
+namespace Atk4\Invoice;
 require_once __DIR__ . '/init.php';
 
-use atk4\schema\MigratorConsole;
-use atk4\ui\Button;
-use atk4\ui\Header;
+use Atk4\Schema\MigratorConsole;
+use Atk4\Ui\Button;
+use Atk4\Ui\Header;
 
 Header::addTo($app, ['Migration Console']);
 
