@@ -49,8 +49,8 @@ trait SimpleTax
     {
         $s_total = 0;
         foreach ($itemRows as $row => $cols) {
-            $price = array_column($cols, 'price')[0];
-            $qty = array_column($cols, 'qty')[0];
+            $price = $cols['price'] ?? 0;
+            $qty = $cols['qty'] ?? 0;
             $s_total = $s_total + ($qty * $price);
         }
         $this->total = $s_total;
