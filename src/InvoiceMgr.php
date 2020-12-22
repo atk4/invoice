@@ -137,8 +137,8 @@ class InvoiceMgr extends View
                 $ml->saveRows();
 
                 return [
-                    new jsToast('Saved!'),
-                    new jsExpression('document.location = [url]', ['url' => $this->invoice->getUrl('invoice')])
+                    new JsToast('Saved!'),
+                    new JsExpression('document.location = [url]', ['url' => $this->invoice->getUrl('invoice')])
                 ];
             });
         });
@@ -191,8 +191,8 @@ class InvoiceMgr extends View
                     $f->model->save();
 
                     return  [
-                        new jsToast(['message' => 'Saved! Redirecting to Invoice', 'duration' => 0]),
-                        new jsExpression('document.location = [url]', ['url' => $this->invoice->getUrl('payment')])
+                        new JsToast(['message' => 'Saved! Redirecting to Invoice', 'duration' => 0]),
+                        new JsExpression('document.location = [url]', ['url' => $this->invoice->getUrl('payment')])
                     ];
                 });
 
@@ -255,8 +255,8 @@ class InvoiceMgr extends View
         $ex = new ConfirmationExecutor(['title' => 'Delete Invoice!']);
         $ex->onHook(BasicExecutor::HOOK_AFTER_EXECUTE, function($x, $return){
             return [
-                new jsToast($return),
-                new jsExpression('document.location = [url]', ['url' => $this->invoice->getUrl()]),
+                new JsToast($return),
+                new JsExpression('document.location = [url]', ['url' => $this->invoice->getUrl()]),
             ];
         });
         $delete = $this->invoiceModel->getUSerAction('delete');
