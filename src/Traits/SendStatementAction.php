@@ -7,12 +7,12 @@ declare(strict_types = 1);
  * Usage:
  * Add this trait in your Client model and call $this->initSendStatementAction() method from models init method.
  */
-namespace atk4\invoice\Traits;
+namespace Atk4\Invoice\Traits;
 
-use atk4\data\Model\UserAction;
-use atk4\ui\CardTable;
-use atk4\ui\Table;
-use atk4\ui\View;
+use Atk4\Data\Model\UserAction;
+use Atk4\Ui\CardTable;
+use Atk4\Ui\Table;
+use Atk4\Ui\View;
 
 trait SendStatementAction
 {

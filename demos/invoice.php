@@ -1,13 +1,13 @@
 <?php
-namespace atk4\invoice;
+namespace Atk4\Invoice;
 require_once __DIR__ . '/init.php';
 
-use atk4\invoice\Model\Client;
-use atk4\invoice\Model\Invoice;
-use atk4\invoice\Model\Payment;
-use atk4\ui\CRUD;
+use Atk4\Invoice\Model\Client;
+use Atk4\Invoice\Model\Invoice;
+use Atk4\Invoice\Model\Payment;
+use Atk4\Ui\Crud;
 
-CRUD::addTo($app)->setModel(new Client($app->db));
+Crud::addTo($app)->setModel(new Client($app->db));
 
 $app->add(new InvoiceMgr([
    'invoiceModel' => new Invoice($app->db),

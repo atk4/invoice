@@ -7,9 +7,9 @@ declare(strict_types = 1);
  * Usage:
  * Add this trait in your Invoice model and call $this->initPayInvoiceAction() method from models init method.
  */
-namespace atk4\invoice\Traits;
+namespace Atk4\Invoice\Traits;
 
-use atk4\data\Model\UserAction;
+use Atk4\Data\Model\UserAction;
 
 trait PayInvoiceAction
 {
@@ -23,8 +23,8 @@ trait PayInvoiceAction
         $this->addUserAction('pay_invoice', [
             'caption' => 'Pay Full Invoice Amount',
             'description' => 'Pay',
-            'enabled' => function() {
-              return $this->get('balance') > 0;
+            'enabled' => function($m) {
+              return $m->get('balance') > 0;
             },
             'modifier' =>UserAction::MODIFIER_UPDATE,
             'appliesTo' => UserAction::APPLIES_TO_SINGLE_RECORD,
@@ -46,7 +46,7 @@ trait PayInvoiceAction
             'amount' => $this->get('balance'),
             'client_id' => $this->get('client_id'),
         ]);
-        
-        return 'Invoice '.$this->getTitle().' is fully paid now';
+
+        return 'Invoice ' . $this->getTitle() . ' is fully paid now';
     }
 }

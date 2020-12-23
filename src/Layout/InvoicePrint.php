@@ -2,9 +2,9 @@
 
 declare(strict_types = 1);
 
-namespace atk4\invoice\Layout;
+namespace Atk4\Invoice\Layout;
 
-use atk4\ui\View;
+use Atk4\Ui\View;
 
 /**
  * Map model field value to template tag.

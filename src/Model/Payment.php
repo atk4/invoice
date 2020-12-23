@@ -4,9 +4,9 @@ declare(strict_types = 1);
 /**
  * Payment model
  */
-namespace atk4\invoice\Model;
+namespace Atk4\Invoice\Model;
 
-use atk4\data\Model;
+use Atk4\Data\Model;
 
 class Payment extends Model
 {

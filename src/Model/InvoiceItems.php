@@ -4,9 +4,9 @@ declare(strict_types = 1);
 /**
  * Invoice Items
  */
-namespace atk4\invoice\Model;
+namespace Atk4\Invoice\Model;
 
-use atk4\data\Model;
+use Atk4\Data\Model;
 
 class InvoiceItems extends Model
 {

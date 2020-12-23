@@ -2,20 +2,20 @@
 
 declare(strict_types = 1);
 
-namespace atk4\invoice;
+namespace Atk4\Invoice;
 
-use atk4\data\Model\UserAction;
-use atk4\ui\CRUD;
-use atk4\ui\Grid;
-use atk4\ui\jQuery;
-use atk4\ui\jsExpression;
-use atk4\ui\jsToast;
-use atk4\ui\Table\Column\Link;
-use atk4\ui\UserAction\BasicExecutor;
-use atk4\ui\UserAction\ConfirmationExecutor;
-use atk4\ui\UserAction\ModalExecutor;
-use atk4\ui\View;
-use atk4\ui\VirtualPage;
+use Atk4\Data\Model\UserAction;
+use Atk4\Ui\Crud;
+use Atk4\Ui\Grid;
+use Atk4\Ui\Jquery;
+use Atk4\Ui\JsExpression;
+use Atk4\Ui\JsToast;
+use Atk4\Ui\Table\Column\Link;
+use Atk4\Ui\UserAction\BasicExecutor;
+use Atk4\Ui\UserAction\ConfirmationExecutor;
+use Atk4\Ui\UserAction\ModalExecutor;
+use Atk4\Ui\View;
+use Atk4\Ui\VirtualPage;
 
 /**
  * Default view for displaying invoice listing.
@@ -66,7 +66,7 @@ class Invoice extends View
         parent::init();
 
         if (!$this->grid) {
-            $this->grid = new CRUD([
+            $this->grid = new Crud([
                 'paginator' => ['urlTrigger' => 'p'],
                 'sortTrigger' => 'sortBy',
                 'useMenuActions' => true,
@@ -79,7 +79,7 @@ class Invoice extends View
         $this->search = $this->getApp()->stickyGet('_q');;
 
         if (!$this->jsAction) {
-            $this->jsAction = new jsToast('Saved!');
+            $this->jsAction = new JsToast('Saved!');
         }
 
         $this->invoicePage = VirtualPage::addTo($this, ['urlTrigger' => 'invoice']);
@@ -189,11 +189,11 @@ class Invoice extends View
     /**
      * Return an IIF js function that will set document.location via javascript.
      */
-    public function jsIIF(string $url, string $arg = 'id'): jsExpression
+    public function jsIIF(string $url, string $arg = 'id'): JsExpression
     {
-        return new jsExpression(
+        return new JsExpression(
             "(function(url, id){document.location = url + '&{$arg}=' + id})([url],[id])",
-            ['url' => $url, 'id' => (new jQuery())->closest('tr')->data('id')]
+            ['url' => $url, 'id' => (new Jquery())->closest('tr')->data('id')]
         );
     }
 
@@ -242,10 +242,10 @@ class Invoice extends View
         $ex = new ModalExecutor(['title' => 'Add Invoice']);
         $ex->onHook(BasicExecutor::HOOK_AFTER_EXECUTE, function($x, $r, $id) {
 
-            return new jsExpression('document.location = [url]', ['url' => $this->getUrl($this->invoicePage->urlTrigger) . '&id= ' . $id]);
+            return new JsExpression('document.location = [url]', ['url' => $this->getUrl($this->invoicePage->urlTrigger) . '&id= ' . $id]);
         });
         $add = $this->model->getUserAction('add');
-        // tell CRUD we will take care of ui response
+        // tell Crud we will take care of ui response
         $add->modifier = UserAction::MODIFIER_READ;
         $add->callback = function($m) {
             $m->save();

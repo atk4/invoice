@@ -2,26 +2,26 @@
 
 declare(strict_types = 1);
 
-namespace atk4\invoice;
+namespace Atk4\Invoice;
 
-use atk4\data\Model;
-use atk4\invoice\Layout\InvoiceForm;
-use atk4\invoice\Layout\InvoicePrint;
-use atk4\ui\BreadCrumb;
-use atk4\ui\Button;
-use atk4\ui\Card;
-use atk4\ui\Exception;
-use atk4\ui\GridLayout;
-use atk4\ui\Header;
-use atk4\ui\Form;
-use atk4\ui\jsExpression;
-use atk4\ui\Menu;
-use atk4\ui\jsToast;
-use atk4\ui\Table;
-use atk4\ui\UserAction\BasicExecutor;
-use atk4\ui\UserAction\ConfirmationExecutor;
-use atk4\ui\View;
-use atk4\ui\VirtualPage;
+use Atk4\Data\Model;
+use Atk4\Invoice\Layout\InvoiceForm;
+use Atk4\Invoice\Layout\InvoicePrint;
+use Atk4\Ui\BreadCrumb;
+use Atk4\Ui\Button;
+use Atk4\Ui\Card;
+use Atk4\Ui\Exception;
+use Atk4\Ui\GridLayout;
+use Atk4\Ui\Header;
+use Atk4\Ui\Form;
+use Atk4\Ui\JsExpression;
+use Atk4\Ui\Menu;
+use Atk4\Ui\JsToast;
+use Atk4\Ui\Table;
+use Atk4\Ui\UserAction\BasicExecutor;
+use Atk4\Ui\UserAction\ConfirmationExecutor;
+use Atk4\Ui\View;
+use Atk4\Ui\VirtualPage;
 
 /**
  * Manage invoice pages.
@@ -137,8 +137,8 @@ class InvoiceMgr extends View
                 $ml->saveRows();
 
                 return [
-                    new jsToast('Saved!'),
-                    new jsExpression('document.location = [url]', ['url' => $this->invoice->getUrl('invoice')])
+                    new JsToast('Saved!'),
+                    new JsExpression('document.location = [url]', ['url' => $this->invoice->getUrl('invoice')])
                 ];
             });
         });
@@ -191,8 +191,8 @@ class InvoiceMgr extends View
                     $f->model->save();
 
                     return  [
-                        new jsToast(['message' => 'Saved! Redirecting to Invoice', 'duration' => 0]),
-                        new jsExpression('document.location = [url]', ['url' => $this->invoice->getUrl('payment')])
+                        new JsToast(['message' => 'Saved! Redirecting to Invoice', 'duration' => 0]),
+                        new JsExpression('document.location = [url]', ['url' => $this->invoice->getUrl('payment')])
                     ];
                 });
 
@@ -239,7 +239,7 @@ class InvoiceMgr extends View
         $link = null;
         $refs = $model->getRefs();
         foreach ($refs as $ref) {
-            if ($ref->getTheirModel()->table === $related->table) {
+            if ($ref->createTheirModel()->table === $related->table) {
                 $link = $ref->link;
                 break;
             }
@@ -255,8 +255,8 @@ class InvoiceMgr extends View
         $ex = new ConfirmationExecutor(['title' => 'Delete Invoice!']);
         $ex->onHook(BasicExecutor::HOOK_AFTER_EXECUTE, function($x, $return){
             return [
-                new jsToast($return),
-                new jsExpression('document.location = [url]', ['url' => $this->invoice->getUrl()]),
+                new JsToast($return),
+                new JsExpression('document.location = [url]', ['url' => $this->invoice->getUrl()]),
             ];
         });
         $delete = $this->invoiceModel->getUSerAction('delete');

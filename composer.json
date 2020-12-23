@@ -14,7 +14,7 @@
   },
   "autoload": {
     "psr-4": {
-      "atk4\\invoice\\": "src/"
+      "Atk4\\Invoice\\": "src/"
     }
   }
 }

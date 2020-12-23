@@ -4,11 +4,11 @@ declare(strict_types = 1);
 /**
  * Invoice model
  */
-namespace atk4\invoice\Model;
+namespace Atk4\Invoice\Model;
 
-use atk4\data\Model;
-use atk4\invoice\Traits\SimpleTax;
-use atk4\invoice\Traits\PayInvoiceAction;
+use Atk4\Data\Model;
+use Atk4\Invoice\Traits\SimpleTax;
+use Atk4\Invoice\Traits\PayInvoiceAction;
 
 class Invoice extends Model
 {

@@ -4,10 +4,10 @@ declare(strict_types = 1);
 /**
  * Client model
  */
-namespace atk4\invoice\Model;
+namespace Atk4\Invoice\Model;
 
-use atk4\data\Model;
-use atk4\invoice\Traits\SendStatementAction;
+use Atk4\Data\Model;
+use Atk4\Invoice\Traits\SendStatementAction;
 
 class Client extends Model
 {
