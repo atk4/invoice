@@ -200,16 +200,17 @@ class Invoice extends View
     /**
      * Manage url for this view.
      */
-    public function getURL(string $pageName = null, bool $includeParam = true): string
+    public function getURL(string $pageName = null, bool $includeParam = true, $includeCallback = true): string
     {
         $params = [];
         $url = strtok($this->url(), '?');
 
-        if ($pageName) {
+        if ($pageName && $includeCallback) {
             $params[$pageName] = $pageName === $this->printPage->urlTrigger ? 'popup' : 'callback';
         }
 
         if ($includeParam) {
+
             // check for paginator page.
             if ($this->sortBy) {
                 $params[$this->grid->sortTrigger] = $this->sortBy;

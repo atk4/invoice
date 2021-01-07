@@ -36,10 +36,10 @@ class Invoice extends Model
 
         $this->addField('vat_rate', ['type' => 'number', 'default' => null, 'required' => true]);
 
-        $this->hasMany('Items', InvoiceItems::class)
+        $this->hasMany('Items', [InvoiceItems::class])
             ->addField('subtotal', ['aggregate'=>'sum', 'field'=>'amount', 'type' => 'money']);
 
-        $this->hasMany('Payments', Payment::class)
+        $this->hasMany('Payments', [Payment::class])
             ->addField('total_paid', ['aggregate' => 'sum', 'field' => 'amount', 'type' => 'money', 'caption' => 'Paid']);
 
         $this->addExpression('total_net', ['expr' => '[subtotal]', 'type' => 'money']);

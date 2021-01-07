@@ -25,7 +25,7 @@ class Payment extends Model
 
         $this->setOrder('paid_on');
 
-        $this->hasOne('invoice_id', Invoice::class);
+        $this->hasOne('invoice_id', [Invoice::class]);
         $this->hasOne('client_id', [Client::class, 'caption' => 'Client', 'ui' => ['visible' => false]]);
     }
 }

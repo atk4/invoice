@@ -128,8 +128,8 @@ class InvoiceMgr extends View
             $form->addControl('total_net', [Form\Control\Line::class, 'readonly' => true]);
             $form->addControl('total_gross', [Form\Control\Line::class, 'readonly' => true]);
 
-            $ml = $form->addControl('ml', [Form\Control\Multiline::class, 'options' => ['size' => 'small'], 'caption' => 'Items']);
-            $ml->setModel($f_model, $this->itemFields, $this->itemRef, $this->itemLink);
+            $ml = $form->addControl('ml', [Form\Control\Multiline::class, 'tableProps' => ['size' => 'small'], 'caption' => 'Items'], ['never_persist' => true]);
+            $ml->setReferenceModel($f_model->ref($this->itemRef), $this->itemLink, $this->itemFields);
             $ml->onLineChange(\Closure::fromCallable([$this->invoiceModel, 'jsUpdateFields']), ['qty', 'price']);
 
             $form->onSubmit(function($f) use ($ml) {
@@ -138,7 +138,7 @@ class InvoiceMgr extends View
 
                 return [
                     new JsToast('Saved!'),
-                    new JsExpression('document.location = [url]', ['url' => $this->invoice->getUrl('invoice')])
+                    new JsExpression('document.location = [url]', ['url' => $this->invoice->getUrl('invoice', true, false)])
                 ];
             });
         });
