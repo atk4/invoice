@@ -26,7 +26,7 @@ class Invoice extends Model
     {
         parent::init();
 
-        $this->hasOne('client_id', [Client::class, 'required' => true, 'caption' => 'Client'])
+        $this->hasOne('client_id', ['model' => [Client::class], 'required' => true, 'caption' => 'Client'])
             ->withTitle();
 
         $this->addField('ref_no', ['required' => true]);
@@ -36,10 +36,10 @@ class Invoice extends Model
 
         $this->addField('vat_rate', ['type' => 'number', 'default' => null, 'required' => true]);
 
-        $this->hasMany('Items', [InvoiceItems::class])
+        $this->hasMany('Items', ['model' => [InvoiceItems::class]])
             ->addField('subtotal', ['aggregate'=>'sum', 'field'=>'amount', 'type' => 'money']);
 
-        $this->hasMany('Payments', [Payment::class])
+        $this->hasMany('Payments', ['model' => [Payment::class]])
             ->addField('total_paid', ['aggregate' => 'sum', 'field' => 'amount', 'type' => 'money', 'caption' => 'Paid']);
 
         $this->addExpression('total_net', ['expr' => '[subtotal]', 'type' => 'money']);
