@@ -43,6 +43,6 @@ class InvoiceItems extends Model
             'caption' => 'Amount'
         ]);
 
-        $this->hasOne('invoice_id', Invoice::class);
+        $this->hasOne('invoice_id', ['model' => [Invoice::class]]);
     }
 }

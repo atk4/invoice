@@ -23,8 +23,8 @@ class Client extends Model
         $this->addField('name', ['required' => true]);
         $this->addField('email');
 
-        $this->hasMany('Invoices', Invoice::class);
-        $this->hasMany('Payments', Payment::class);
+        $this->hasMany('Invoices', ['model' => [Invoice::class]]);
+        $this->hasMany('Payments', ['model' => [Payment::class]]);
 
         // actions
         $this->initSendStatementAction();
