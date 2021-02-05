@@ -203,7 +203,7 @@ class InvoiceMgr extends View
                 $crumb = BreadCrumb::addTo($page, [null, 'big']);
                 View::addTo($page, ['ui' => 'divider']);
 
-                $crumb->addCrumb('Invoices', $this->invoice->getUrl(false));
+                $crumb->addCrumb('Invoices', $this->invoice->getUrl(true));
                 $crumb->addCrumb($this->invoiceModel->getTitle(), $this->invoice->invoicePage->getUrl());
                 $crumb->addCrumb($this->invoiceModel->getTitle().' \'s payments');
                 $crumb->popTitle();

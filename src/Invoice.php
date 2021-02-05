@@ -76,7 +76,7 @@ class Invoice extends View
         $this->invoiceId = $this->getApp()->stickyGet('id');
         $this->page = $this->getApp()->stickyGet('p');
         $this->sortBy = $this->getApp()->stickyGet('sortBy');
-        $this->search = $this->getApp()->stickyGet('_q');;
+        $this->search = $this->getApp()->stickyGet('_q');
 
         if (!$this->jsAction) {
             $this->jsAction = new JsToast('Saved!');
