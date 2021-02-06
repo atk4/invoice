@@ -106,9 +106,10 @@ class InvoiceMgr extends View
 
             $menu = Menu::addTo($page);
             if ($this->paymentModel) {
-                $menu->addItem(['Payments', 'icon' => 'dollar sign'])->link($this->invoice->getURL($this->invoice->paymentPage->urlTrigger));
+                $menu->addItem(['Payments', 'icon' => 'dollar sign'])->link($this->invoice->paymentPage->getUrl());
+
             }
-            $menu->addItem(['Print', 'icon' => 'print'])->link($this->invoice->getURL($this->invoice->printPage->urlTrigger));
+            $menu->addItem(['Print', 'icon' => 'print'])->link($this->invoice->printPage->getUrl('popup'));
 
             $form = Form::addTo($page, ['canLeave' => false, 'layout' => [InvoiceForm::class]]);
 
@@ -138,7 +139,7 @@ class InvoiceMgr extends View
 
                 return [
                     new JsToast('Saved!'),
-                    new JsExpression('document.location = [url]', ['url' => $this->invoice->getUrl('invoice', true, false)])
+                    new JsExpression('document.location = [url]', ['url' => $this->invoice->getUrl(true)])
                 ];
             });
         });
@@ -159,49 +160,51 @@ class InvoiceMgr extends View
                 $this->invoiceModel->load($id);
                 $this->paymentModel->addCondition($this->findRelatedField($this->paymentModel, $this->invoiceModel), $id);
 
-                $refs = $this->paymentModel->getRefs();
-
-                $balance = 'Balance: '.$this->invoice->get('balance');
-
                 // setup payment editing page.
                 $paymentEdit = VirtualPage::addTo($page, ['urlTrigger' => 'p-edit']);
-                $editCrumb = BreadCrumb::addTo($paymentEdit, [null, 'big']);
-                View::addTo($paymentEdit, ['ui' =>'divider']);
 
-                Header::addTo($paymentEdit, [$balance]);
-                $editCrumb->addCrumb('Invoices', $this->invoice->getURL());
-                $editCrumb->addCrumb($this->invoiceModel->getTitle(), $this->invoice->getUrl('invoice'));
-                $editCrumb->addCrumb($this->invoiceModel->getTitle().' \'s payments', $this->invoice->getURL('payment'));
+                $paymentEdit->set(function($paymentPage) use ($page) {
+                    $balance = 'Balance: '.$this->invoice->get('balance');
 
-                $pId = $page->stickyGet('pId');
-                if ($pId) {
-                    $this->paymentModel->load($pId);
-                    $editCrumb->addCrumb('Edit payment');
-                } else {
-                    $editCrumb->addCrumb('New payment');
-                }
-                $editCrumb->popTitle();
+                    $editCrumb = BreadCrumb::addTo($paymentPage, [null, 'big']);
+                    View::addTo($paymentPage, ['ui' =>'divider']);
 
-                $formPayment = Form::addTo($paymentEdit);
-                $formPayment->setModel($this->paymentModel, $this->paymentEditFields);
-                $formPayment->onSubmit(function($f) {
-                    foreach ($this->paymentRelations as $paiement => $relation) {
-                        $f->model->set($paiement, $this->invoiceModel->get($relation));
+                    Header::addTo($paymentPage, [$balance]);
+                    $editCrumb->addCrumb('Invoices', $this->invoice->getURL(false));
+                    $editCrumb->addCrumb($this->invoiceModel->getTitle(), $this->invoice->invoicePage->getUrl());
+                    $editCrumb->addCrumb($this->invoiceModel->getTitle().' \'s payments', $page->getUrl());
+
+                    $pId = $page->stickyGet('pId');
+                    if ($pId) {
+                        $this->paymentModel->load($pId);
+                        $editCrumb->addCrumb('Edit payment');
+                    } else {
+                        $editCrumb->addCrumb('New payment');
                     }
-                    $f->model->save();
+                    $editCrumb->popTitle();
 
-                    return  [
-                        new JsToast(['message' => 'Saved! Redirecting to Invoice', 'duration' => 0]),
-                        new JsExpression('document.location = [url]', ['url' => $this->invoice->getUrl('payment')])
-                    ];
+                    $formPayment = Form::addTo($paymentPage);
+                    $formPayment->setModel($this->paymentModel, $this->paymentEditFields);
+                    $formPayment->onSubmit(function($f) {
+                        foreach ($this->paymentRelations as $paiement => $relation) {
+                            $f->model->set($paiement, $this->invoiceModel->get($relation));
+                        }
+                        $f->model->save();
+
+                        return  [
+                            new JsToast(['message' => 'Saved! Redirecting to Invoice', 'duration' => 0]),
+                            new JsExpression('document.location = [url]', ['url' => $this->invoice->paymentPage->getUrl()])
+                        ];
+                    });
                 });
+
 
                 // setup payment grid display
                 $crumb = BreadCrumb::addTo($page, [null, 'big']);
                 View::addTo($page, ['ui' => 'divider']);
 
-                $crumb->addCrumb('Invoices', $this->invoice->getUrl());
-                $crumb->addCrumb($this->invoiceModel->getTitle(), $this->invoice->getUrl('invoice'));
+                $crumb->addCrumb('Invoices', $this->invoice->getUrl(true));
+                $crumb->addCrumb($this->invoiceModel->getTitle(), $this->invoice->invoicePage->getUrl());
                 $crumb->addCrumb($this->invoiceModel->getTitle().' \'s payments');
                 $crumb->popTitle();
 

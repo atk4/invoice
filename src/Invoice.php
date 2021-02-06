@@ -76,7 +76,7 @@ class Invoice extends View
         $this->invoiceId = $this->getApp()->stickyGet('id');
         $this->page = $this->getApp()->stickyGet('p');
         $this->sortBy = $this->getApp()->stickyGet('sortBy');
-        $this->search = $this->getApp()->stickyGet('_q');;
+        $this->search = $this->getApp()->stickyGet('_q');
 
         if (!$this->jsAction) {
             $this->jsAction = new JsToast('Saved!');
@@ -110,10 +110,10 @@ class Invoice extends View
 
         $this->page = $g->paginator->getCurrentPage();
 
-        $g->addDecorator('ref_no', new Link($this->getURL('invoice') . '&id={$id}'));
+        $g->addDecorator('ref_no', new Link($this->invoicePage->getUrl() . '&id={$id}'));
 
         if ($this->hasPayment) {
-            $g->addActionMenuItem('View Payments', $this->jsIIF($this->getURL($this->paymentPage->urlTrigger)));
+            $g->addActionMenuItem('View Payments', $this->jsIIF($this->paymentPage->getUrl()));
         }
 
         $g->addActionMenuItem('Print Invoice', $this->jsIIF($this->printPage->getURL('popup')));
@@ -121,20 +121,13 @@ class Invoice extends View
 
     /**
      * Return a typecast field model value if available.
-     *
-     * @param $field
-     *
-     * @return mixed
-     *
-     * @throws \atk4\core\Exception
-     * @throws \atk4\data\Exception
      */
-    public function get($field)
+    public function get(string $fieldName)
     {
         if ($this->getApp()->ui_persistence) {
-            return $this->getApp()->ui_persistence->typecastSaveField($this->model->getField($field), $this->model->get($field));
+            return $this->getApp()->ui_persistence->typecastSaveField($this->model->getField($fieldName), $this->model->get($fieldName));
         } else {
-            return $this->model->get($field);
+            return $this->model->get($fieldName);
         }
     }
 
@@ -147,7 +140,7 @@ class Invoice extends View
             return;
         }
 
-        call_user_func_array($fx, [$this->printPage, $this->invoiceId]);
+        $this->printPage->set($fx, [$this->invoiceId]);
     }
 
     public function getDir($dirName)
@@ -163,7 +156,7 @@ class Invoice extends View
         if (!($this->getPage() === 'invoice')) {
             return;
         }
-        call_user_func_array($fx, [$this->invoicePage, $this->invoiceId]);
+        $this->invoicePage->set($fx, [$this->invoiceId]);
     }
 
     /**
@@ -175,7 +168,7 @@ class Invoice extends View
             return;
         }
 
-        call_user_func_array($fx, [$this->paymentPage, $this->invoiceId]);
+        $this->paymentPage->set($fx, [$this->invoiceId]);
     }
 
     /**
@@ -200,14 +193,10 @@ class Invoice extends View
     /**
      * Manage url for this view.
      */
-    public function getURL(string $pageName = null, bool $includeParam = true, $includeCallback = true): string
+    public function getURL(bool $includeParam = true): string
     {
         $params = [];
         $url = strtok($this->url(), '?');
-
-        if ($pageName && $includeCallback) {
-            $params[$pageName] = $pageName === $this->printPage->urlTrigger ? 'popup' : 'callback';
-        }
 
         if ($includeParam) {
 
