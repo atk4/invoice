@@ -231,9 +231,9 @@ class Invoice extends View
     {
         $ex = new ModalExecutor(['title' => 'Add Invoice']);
         $ex->onHook(BasicExecutor::HOOK_AFTER_EXECUTE, function($x, $r, $id) {
-
-            return new JsExpression('document.location = [url]', ['url' => $this->getUrl($this->invoicePage->urlTrigger) . '&id= ' . $id]);
+            return new JsExpression('document.location = [url]', ['url' => $this->invoicePage->getUrl() . '&id= ' . $id]);
         });
+
         $add = $this->model->getUserAction('add');
         // tell Crud we will take care of ui response
         $add->modifier = UserAction::MODIFIER_READ;
@@ -242,7 +242,8 @@ class Invoice extends View
 
             return 'Saved! Redirecting to Invoice';
         };
-        $add->ui['executor'] = $ex;
+
+        $this->getExecutorFactory()->registerExecutor($add, $ex);
 
         return $add;
     }
