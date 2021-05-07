@@ -253,21 +253,17 @@ class Invoice extends View
      */
     private function setDeleteAction(): UserAction
     {
-        $ex = new ConfirmationExecutor(['title' => 'Delete Invoice!']);
         $delete = $this->model->getUserAction('delete');
-        $delete->ui['executor'] = $ex;
         $delete->confirmation = function ($a) {
-            $m = $a->getModel();
-            $title = $m->getField($m->title_field)->getCaption();
-            $value = $m->getTitle();
+            $title = $a->getModel()->getField($a->getModel()->title_field)->getCaption();
+            $value = $a->getEntity()->getTitle();
             return "Delete invoice using {$title}: <b>{$value}</b>?";
         };
 
-        $delete->ui['confirm'] = null;
-        $delete->callback =  function ($m) {
-            if ($m->loaded()) {
-                $title = $m->getTitle();
-                $m->delete();
+        $delete->callback =  function ($record) {
+            if ($record->loaded()) {
+                $title = $record->getTitle();
+                $record->delete();
 
                 return 'Invoice: ' . $title . ' has been delete.';
             }
