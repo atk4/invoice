@@ -97,7 +97,7 @@ class InvoiceMgr extends View
 
         // set page for editing invoice.
         $this->invoice->setInvoicePage(function($page, $id) {
-
+            $invoiceRecord = $this->invoiceModel->tryLoad($id);
             $crumb = BreadCrumb::addTo($page, [null, 'big']);
 
             View::addTo($page, ['ui' =>'divider']);
@@ -115,7 +115,7 @@ class InvoiceMgr extends View
 
             if ($id) {
                 $this->invoiceModel->load($id);
-                $crumb->addCrumb($this->invoiceModel->getTitle());
+                $crumb->addCrumb($invoiceRecord->getTitle());
                 $menu->addItem(['Delete', 'icon' => 'times'], $this->getDeleteInvoiceAction())->addClass('floated right');
             }
 
@@ -123,14 +123,14 @@ class InvoiceMgr extends View
 
             Button::addTo($form,['Back'])->link($this->invoice->getUrl());
 
-            $f_model = $form->setModel($this->invoiceModel);
+            $f_model = $form->setModel($invoiceRecord);
 
             $form->addControl('total_vat', [Form\Control\Line::class, 'readonly' => true]);
             $form->addControl('total_net', [Form\Control\Line::class, 'readonly' => true]);
             $form->addControl('total_gross', [Form\Control\Line::class, 'readonly' => true]);
 
             $ml = $form->addControl('ml', [Form\Control\Multiline::class, 'tableProps' => ['size' => 'small'], 'caption' => 'Items'], ['never_persist' => true]);
-            $ml->setReferenceModel($f_model->ref($this->itemRef), $this->itemLink, $this->itemFields);
+            $ml->setReferenceModel($this->itemRef, null, $this->itemFields);
             $ml->onLineChange(\Closure::fromCallable([$this->invoiceModel, 'jsUpdateFields']), ['qty', 'price']);
 
             $form->onSubmit(function($f) use ($ml) {
@@ -157,26 +157,26 @@ class InvoiceMgr extends View
         if ($this->paymentModel) {
             // set payment page.
             $this->invoice->setPaymentPage(function($page, $id) {
-                $this->invoiceModel->load($id);
+                $invoiceRecord = $this->invoiceModel->load($id);
                 $this->paymentModel->addCondition($this->findRelatedField($this->paymentModel, $this->invoiceModel), $id);
 
                 // setup payment editing page.
                 $paymentEdit = VirtualPage::addTo($page, ['urlTrigger' => 'p-edit']);
 
-                $paymentEdit->set(function($paymentPage) use ($page) {
-                    $balance = 'Balance: '.$this->invoice->get('balance');
+                $paymentEdit->set(function($paymentPage) use ($page, $invoiceRecord) {
+                    $balance = 'Balance: '.$invoiceRecord->get('balance');
 
                     $editCrumb = BreadCrumb::addTo($paymentPage, [null, 'big']);
                     View::addTo($paymentPage, ['ui' =>'divider']);
 
                     Header::addTo($paymentPage, [$balance]);
                     $editCrumb->addCrumb('Invoices', $this->invoice->getURL(false));
-                    $editCrumb->addCrumb($this->invoiceModel->getTitle(), $this->invoice->invoicePage->getUrl());
-                    $editCrumb->addCrumb($this->invoiceModel->getTitle().' \'s payments', $page->getUrl());
+                    $editCrumb->addCrumb($invoiceRecord->getTitle(), $this->invoice->invoicePage->getUrl());
+                    $editCrumb->addCrumb($invoiceRecord->getTitle().' \'s payments', $page->getUrl());
 
                     $pId = $page->stickyGet('pId');
+                    $paymentRecord = $this->paymentModel->tryLoad($pId);
                     if ($pId) {
-                        $this->paymentModel->load($pId);
                         $editCrumb->addCrumb('Edit payment');
                     } else {
                         $editCrumb->addCrumb('New payment');
@@ -184,10 +184,10 @@ class InvoiceMgr extends View
                     $editCrumb->popTitle();
 
                     $formPayment = Form::addTo($paymentPage);
-                    $formPayment->setModel($this->paymentModel, $this->paymentEditFields);
-                    $formPayment->onSubmit(function($f) {
+                    $formPayment->setModel($paymentRecord, $this->paymentEditFields);
+                    $formPayment->onSubmit(function($f) use($invoiceRecord) {
                         foreach ($this->paymentRelations as $paiement => $relation) {
-                            $f->model->set($paiement, $this->invoiceModel->get($relation));
+                            $f->model->set($paiement, $invoiceRecord->get($relation));
                         }
                         $f->model->save();
 
@@ -204,8 +204,8 @@ class InvoiceMgr extends View
                 View::addTo($page, ['ui' => 'divider']);
 
                 $crumb->addCrumb('Invoices', $this->invoice->getUrl(true));
-                $crumb->addCrumb($this->invoiceModel->getTitle(), $this->invoice->invoicePage->getUrl());
-                $crumb->addCrumb($this->invoiceModel->getTitle().' \'s payments');
+                $crumb->addCrumb($invoiceRecord->getTitle(), $this->invoice->invoicePage->getUrl());
+                $crumb->addCrumb($invoiceRecord->getTitle().' \'s payments');
                 $crumb->popTitle();
 
                 $m = Menu::addTo($page);
@@ -214,7 +214,7 @@ class InvoiceMgr extends View
                 $gl = GridLayout::addTo($page, [['columns'=>3, 'rows'=>1]]);
                 $seg = View::addTo($gl, ['ui' => 'basic segment'], ['r1c1']);
                 $card = Card::addTo($seg, ['header' => false, 'useLabel' => true]);
-                $card->setModel($this->invoiceModel, $this->paymentDisplayFields);
+                $card->setModel($invoiceRecord, $this->paymentDisplayFields);
 
                 View::addTo($page, ['ui' => 'hidden divider']);
 

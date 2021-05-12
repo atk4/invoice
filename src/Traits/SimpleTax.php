@@ -25,7 +25,7 @@ trait SimpleTax
 
         // calculate totals
         $total_net = $this->getSubTotal($rows);
-        $total_vat = $this->getTotalTax($total_net);
+        $total_vat = $this->getTotalTax($total_net, (float) $f->model->get('vat_rate'));
 
         // set total field values
         $resp = [];
@@ -61,8 +61,8 @@ trait SimpleTax
     /**
      * Return tax amount from total amount.
      */
-    protected function getTotalTax(float $total): float
+    protected function getTotalTax(float $total, float $rate): float
     {
-        return round($total * $this->get('vat_rate') / 100, 2);
+        return round($total * $rate / 100, 2);
     }
 }

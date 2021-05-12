@@ -40,7 +40,8 @@ trait PayInvoiceAction
      */
     public function pay_invoice(string $method): string
     {
-        $this->ref('Payments')->save([
+        $paymentRecord = $this->ref('Payments')->createEntity();
+        $paymentRecord->save([
             'method' => $method,
             'paid_on' => new \DateTime(),
             'amount' => $this->get('balance'),
