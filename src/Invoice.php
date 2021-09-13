@@ -136,10 +136,6 @@ class Invoice extends View
      */
     public function setPrintPage(callable $fx): void
     {
-        if (!($this->getPage('popup') === 'print')) {
-            return;
-        }
-
         $this->printPage->set($fx, [$this->invoiceId]);
     }
 
@@ -153,9 +149,6 @@ class Invoice extends View
      */
     public function setInvoicePage(callable $fx): void
     {
-        if (!($this->getPage() === 'invoice')) {
-            return;
-        }
         $this->invoicePage->set($fx, [$this->invoiceId]);
     }
 
@@ -164,19 +157,7 @@ class Invoice extends View
      */
     public function setPaymentPage(callable $fx): void
     {
-        if (!$this->hasPayment || !($this->getPage() === 'payment')) {
-            return;
-        }
-
         $this->paymentPage->set($fx, [$this->invoiceId]);
-    }
-
-    /**
-     * Return current VirtualPage
-     */
-    public function getPage(string $type = 'callback'): string
-    {
-        return array_search($type, $_GET) ? array_search($type, $_GET) : '';
     }
 
     /**
